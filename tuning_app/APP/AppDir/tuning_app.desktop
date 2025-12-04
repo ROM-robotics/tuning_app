@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Tuning App
+Comment=Rom Dynamics Robot suite
+Exec=tuning_app
+Icon=tuning_app
+Categories=Development;
+X-AppImage-version=
