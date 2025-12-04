@@ -44,7 +44,7 @@ jobs:
       - name: 4. Configure CMake
         # Qt 6 ကို CMake ဖြင့် သုံးသောအခါ CMAKE_PREFIX_PATH ကို သတ်မှတ်ပေးရန် လိုအပ်သည်
         run: |
-          cmake -S tuning_app/tuning_app -B build \
+          cmake -S tuning_app -B build \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_PREFIX_PATH=${{ env.Qt6_DIR }} \
             -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install
