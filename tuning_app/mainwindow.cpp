@@ -17,6 +17,7 @@
 #include <QObject>
 #include <QQmlContext>
 #include <QQuickItem>
+#include <QTimer>
 
 #include "design/rom_design.hpp"
 
@@ -62,6 +63,34 @@ MainWindow::MainWindow(QWidget *parent)
     initRos2ControlTab();
     initEkfTab();
     initCartoTab();
+    initNav2_1Tab();
+    initNav2_2Tab();
+    initTopicTab();
+}
+
+void MainWindow::setConnectionParams(const QString &ip, const QString &password, const QString &ns)
+{
+    ui->ipLineEdit->setText(ip);
+    ui->passwordLineEdit->setText(password);
+    if (!ns.isEmpty()) {
+        ui->nsLineEdit->setText(ns);
+    }
+}
+
+void MainWindow::autoConnect()
+{
+    // Automatically trigger the connect button click
+    QTimer::singleShot(100, this, &MainWindow::on_connectBtn_clicked);
+}
+
+void MainWindow::switchToControlTab()
+{
+    // Switch to control tab (index 1) after successful connection
+    QTimer::singleShot(500, this, [this]() {
+        if (this->isConnected_ && ui->tabWidget) {
+            ui->tabWidget->setCurrentIndex(1); // ros2_control tab
+        }
+    });
 }
 
 MainWindow::~MainWindow()
@@ -917,7 +946,13 @@ void MainWindow::createCommunicationClient(const QString &robot_ns, const QStrin
         &RosBridgeClient::receivedServiceResponse, 
         this, 
         &MainWindow::onReceivedServiceResponse, 
-        Qt::QueuedConnection); 
+        Qt::QueuedConnection);
+
+    connect(communication_,
+        &RosBridgeClient::receivedActionFeedback,
+        this,
+        &MainWindow::onReceivedActionFeedback,
+        Qt::QueuedConnection);
             
     // Worker object က disconnected signal ထုတ်လွှင့်ရင် Thread ကို ရပ်ဖို့
     // လောလောဆယ်မလိုဘူး။ reconnect လုပ်ချင်တာမို့။
@@ -1579,52 +1614,174 @@ void MainWindow::deactivateCartoTab()
 
 void MainWindow::initNav2_1Tab()
 {
+    if (ui->navi2_one)
+    {
+        qDebug() << "Initializing Nav2_1 Tab UI components";
 
+        QLayout *existing = ui->navi2_one->layout();
+        if (existing)
+        {
+            delete existing;
+            qDebug() << "Deleted existing layout in Nav2_1 Tab";
+        }
+
+        // Create main layout
+        QVBoxLayout *mainLayout = new QVBoxLayout(ui->navi2_one);
+        mainLayout->setContentsMargins(10, 10, 10, 10);
+        mainLayout->setSpacing(10);
+
+        // Create title label
+        QLabel *titleLabel = new QLabel("NavigateToPose Action Feedback", ui->navi2_one);
+        titleLabel->setStyleSheet("font: 14pt 'SF Pro'; color: #03fc84; background: transparent;");
+        titleLabel->setAlignment(Qt::AlignCenter);
+        mainLayout->addWidget(titleLabel);
+
+        // Create scroll area
+        nav2_1ScrollArea_ = new QScrollArea(ui->navi2_one);
+        nav2_1ScrollArea_->setWidgetResizable(true);
+        nav2_1ScrollArea_->setStyleSheet("QScrollArea { background: #2e2e2e; border: none; }");
+
+        // Create widget to hold feedback labels
+        nav2_1FeedbackWidget_ = new QWidget();
+        nav2_1FeedbackWidget_->setStyleSheet("background: #2e2e2e;");
+        
+        nav2_1FeedbackLayout_ = new QVBoxLayout(nav2_1FeedbackWidget_);
+        nav2_1FeedbackLayout_->setContentsMargins(10, 10, 10, 10);
+        nav2_1FeedbackLayout_->setSpacing(8);
+        nav2_1FeedbackLayout_->setAlignment(Qt::AlignTop);
+
+        // Create null label (initially visible)
+        nav2_1NullLabel_ = new QLabel("Null", nav2_1FeedbackWidget_);
+        nav2_1NullLabel_->setStyleSheet("font: 20pt 'SF Pro'; color: rgb(246, 97, 81); background: transparent;");
+        nav2_1NullLabel_->setAlignment(Qt::AlignCenter);
+        nav2_1FeedbackLayout_->addWidget(nav2_1NullLabel_);
+
+        nav2_1FeedbackWidget_->setLayout(nav2_1FeedbackLayout_);
+        nav2_1ScrollArea_->setWidget(nav2_1FeedbackWidget_);
+        
+        mainLayout->addWidget(nav2_1ScrollArea_);
+        ui->navi2_one->setLayout(mainLayout);
+
+        // Create timer for feedback timeout detection
+        nav2_1FeedbackTimer_ = new QTimer(this);
+        nav2_1FeedbackTimer_->setInterval(3000); // 3 seconds
+        nav2_1FeedbackTimer_->setSingleShot(false);
+        connect(nav2_1FeedbackTimer_, &QTimer::timeout, this, [this]() {
+            // Show null state when no feedback received
+            if (nav2_1NullLabel_) {
+                nav2_1NullLabel_->setVisible(true);
+            }
+            // Hide all feedback labels
+            for (auto label : nav2_1FeedbackLabels_) {
+                label->setVisible(false);
+            }
+        });
+    }
 }
 void MainWindow::activateNav2_1Tab()
 {
-    //QString example_topic_name = "/diff_controller/cmd_vel_unstamped";
-    //QString example_msg_type   = "geometry_msgs/msg/Twist";
+    if (!communication_) return;
+
+    QString action_name = "/navigate_to_pose";
+    QString action_type = "nav2_msgs/action/NavigateToPose";
     
-    //communication_->subscribeTopic(example_topic_name, example_msg_type);
+    QMetaObject::invokeMethod(
+        communication_,
+        "subscribeActionFeedback",
+        Qt::QueuedConnection,
+        Q_ARG(const QString&, action_name),
+        Q_ARG(const QString&, action_type)
+    );
 
-    //qDebug() << "Subscribed to " << example_topic_name;
+    // Start feedback timeout timer
+    if (nav2_1FeedbackTimer_) {
+        nav2_1FeedbackTimer_->start();
+    }
 
+    qDebug() << "Subscribed to NavigateToPose action feedback";
 }
 void MainWindow::deactivateNav2_1Tab()
 {
-    //QString example_topic_name = "/diff_controller/cmd_vel_unstamped";
-    //QString example_msg_type   = "geometry_msgs/msg/Twist";
+    if (!communication_) return;
 
-    //communication_->unsubscribeTopic(example_topic_name, example_msg_type);
+    QString action_name = "/navigate_to_pose";
+    
+    QMetaObject::invokeMethod(
+        communication_,
+        "unsubscribeActionFeedback",
+        Qt::QueuedConnection,
+        Q_ARG(const QString&, action_name)
+    );
 
-    //qDebug() << "Unsubscribed to " << example_topic_name;
+    // Stop feedback timeout timer
+    if (nav2_1FeedbackTimer_) {
+        nav2_1FeedbackTimer_->stop();
+    }
 
+    qDebug() << "Unsubscribed from NavigateToPose action feedback";
 }
 
 void MainWindow::initNav2_2Tab()
 {
+    if (ui->navi2_two)
+    {
+        qDebug() << "Initializing Nav2_2 Tab UI components";
 
+        QLayout *existing = ui->navi2_two->layout();
+        if (existing)
+        {
+            delete existing;
+            qDebug() << "Deleted existing layout in Nav2_2 Tab";
+        }
+
+        // Create main layout
+        QVBoxLayout *mainLayout = new QVBoxLayout(ui->navi2_two);
+        mainLayout->setContentsMargins(5, 5, 5, 5);
+        mainLayout->setSpacing(5);
+
+        // Create TF tree widget
+        tfTreeWidget_ = new TFTreeWidget(ui->navi2_two);
+        mainLayout->addWidget(tfTreeWidget_);
+
+        ui->navi2_two->setLayout(mainLayout);
+    }
 }
 void MainWindow::activateNav2_2Tab()
 {
-    //QString example_topic_name = "/diff_controller/cmd_vel_unstamped";
-    //QString example_msg_type   = "geometry_msgs/msg/Twist";
+    if (!communication_) return;
+
+    QString tf_topic_name = "/tf";
+    QString tf_msg_type = "tf2_msgs/msg/TFMessage";
     
-    //communication_->subscribeTopic(example_topic_name, example_msg_type);
+    QMetaObject::invokeMethod(
+        communication_,
+        "subscribeTopic",
+        Qt::QueuedConnection,
+        Q_ARG(const QString&, tf_topic_name),
+        Q_ARG(const QString&, tf_msg_type)
+    );
 
-    //qDebug() << "Subscribed to " << example_topic_name;
-
+    qDebug() << "Subscribed to" << tf_topic_name;
 }
 void MainWindow::deactivateNav2_2Tab()
 {
-    //QString example_topic_name = "/diff_controller/cmd_vel_unstamped";
-    //QString example_msg_type   = "geometry_msgs/msg/Twist";
+    if (!communication_) return;
 
-    //communication_->unsubscribeTopic(example_topic_name, example_msg_type);
+    QString tf_topic_name = "/tf";
+    
+    QMetaObject::invokeMethod(
+        communication_,
+        "unsubscribeTopic",
+        Qt::QueuedConnection,
+        Q_ARG(const QString&, tf_topic_name)
+    );
 
-    //qDebug() << "Unsubscribed to " << example_topic_name;
+    // Clear TF tree visualization
+    if (tfTreeWidget_) {
+        tfTreeWidget_->clearTransforms();
+    }
 
+    qDebug() << "Unsubscribed from" << tf_topic_name;
 }
 
 void MainWindow::initNav2_3Tab()
@@ -1679,34 +1836,169 @@ void MainWindow::deactivateBtTab()
 
 void MainWindow::initTopicTab()
 {
-
+    // Map all node buttons by their node names
+    topicTabNodeButtons_["/controller_manager"] = ui->controller_managerBtn;
+    topicTabNodeButtons_["/diff_controller"] = ui->diff_controllerBtn;
+    topicTabNodeButtons_["/gpio_controller"] = ui->gpio_controllerBtn;
+    topicTabNodeButtons_["/robot_state_publisher"] = ui->robot_state_publisherBtn;
+    topicTabNodeButtons_["/joint_broadcaster"] = ui->joint_broadcasterBtn;
+    
+    topicTabNodeButtons_["/static_tf_pub"] = ui->static_tf_pubBtn;
+    topicTabNodeButtons_["/ltme_node"] = ui->ltme_nodeBtn;
+    topicTabNodeButtons_["/imu"] = ui->imuBtn;
+    topicTabNodeButtons_["/ekf_filter_node"] = ui->ekf_filter_nodeBtn;
+    topicTabNodeButtons_["/cartographer_node"] = ui->cartographer_nodeBtn;
+    topicTabNodeButtons_["/twist_mux"] = ui->twist_muxBtn;
+    
+    topicTabNodeButtons_["/behavior_server"] = ui->behavior_serverBtn;
+    topicTabNodeButtons_["/bt_navigator"] = ui->bt_navigatorBtn;
+    topicTabNodeButtons_["/bt_navigator_navigate_through_poses_rclcpp_node"] = ui->bt_navigator_navigate_through_poses_rclcpp_nodeBtn;
+    
+    topicTabNodeButtons_["/bt_navigator_navigate_to_pose_rclcpp_node"] = ui->bt_navigator_navigate_to_pose_rclcpp_nodeBtn;
+    topicTabNodeButtons_["/bt_stop_client_node"] = ui->bt_stop_client_nodeBtn;
+    topicTabNodeButtons_["/controller_server"] = ui->controller_serverBtn;
+    
+    topicTabNodeButtons_["/global_costmap/global_costmap"] = ui->global_costmapBtn;
+    topicTabNodeButtons_["/local_costmap/local_costmap"] = ui->local_costmapBtn;
+    topicTabNodeButtons_["/nav2_container"] = ui->nav2_containerBtn;
+    topicTabNodeButtons_["/planner_server"] = ui->planner_serverBtn;
+    
+    topicTabNodeButtons_["/velocity_smoother"] = ui->velocity_smootherBtn;
+    topicTabNodeButtons_["/waypoint_follower"] = ui->waypoint_followerBtn;
+    topicTabNodeButtons_["/robot_pose_publisher"] = ui->robot_pose_publisherBtn;
+    
+    topicTabNodeButtons_["/smoother_server"] = ui->smoother_serverBtn;
+    topicTabNodeButtons_["/map_server"] = ui->map_serverBtn;
+    topicTabNodeButtons_["/lifecycle_manager_navigation"] = ui->lifecycle_manager_navigationBtn;
+    topicTabNodeButtons_["/lifecycle_manager_localization"] = ui->lifecycle_manager_localizationBtn;
+    
+    topicTabNodeButtons_["/which_maps_server"] = ui->which_maps_serverBtn;
+    topicTabNodeButtons_["/which_name_server"] = ui->which_name_serverBtn;
+    topicTabNodeButtons_["/which_nav_switcher"] = ui->which_nav_switcherBtn;
+    topicTabNodeButtons_["/map_base_footprint_pub"] = ui->map_base_footprint_pubBtn;
+    
+    topicTabNodeButtons_["/which_vel_server"] = ui->which_vel_serverBtn;
+    topicTabNodeButtons_["/launch_ros_5050"] = ui->launch_ros_5050Btn;
+    topicTabNodeButtons_["/rosapi"] = ui->rosapiBtn;
+    topicTabNodeButtons_["/rosbridge_websocket"] = ui->rosbridge_websocketBtn;
+    topicTabNodeButtons_["/construct_bt_xml_server"] = ui->construct_bt_xml_serverBtn;
+    
+    // Connect all button click events
+    for (auto it = topicTabNodeButtons_.begin(); it != topicTabNodeButtons_.end(); ++it) {
+        QPushButton *btn = it.value();
+        if (btn) {
+            connect(btn, &QPushButton::clicked, this, &MainWindow::onNodeButtonClicked);
+        }
+    }
+    
+    // Create timer for periodic checking
+    topicTabCheckTimer_ = new QTimer(this);
+    connect(topicTabCheckTimer_, &QTimer::timeout, this, [this]() {
+        if (!communication_) return;
+        
+        auto ns_prefix = robotNamespace_;
+        if (!ns_prefix.isEmpty() && !ns_prefix.startsWith('/')) ns_prefix.prepend('/');
+        
+        QString service_name = ns_prefix + "/rosapi/nodes";
+        QString service_type = "rosapi_msgs/srv/Nodes";
+        QString service_id = "topic_tab_node_check";
+        
+        QMetaObject::invokeMethod(
+            communication_,
+            "callService",
+            Qt::QueuedConnection,
+            Q_ARG(const QString&, service_name),
+            Q_ARG(const QString&, service_id),
+            Q_ARG(const QString&, service_type)
+        );
+    });
 }
 void MainWindow::activateTopicTab()
 {
     if (!communication_) return;
 
-    auto ns_prefix = robotNamespace_;
-    if (!ns_prefix.isEmpty() && !ns_prefix.startsWith('/')) ns_prefix.prepend('/');
-
-    QString service_name = ns_prefix + "/rosapi/nodes";
-    QString service_type   = "rosapi_msgs/srv/Nodes";
-    //callService(const QString &service_name, const QString &id, const QString &msg_type);
-    // ⭐
-    QMetaObject::invokeMethod(
-        communication_, 
-        "callService", 
-        Qt::QueuedConnection,
-        Q_ARG(const QString&, service_name),
-        Q_ARG(const QString&, "rom123"),
-        Q_ARG(const QString&, service_type)
-    );
-    qDebug() << "Service request to " << service_name;
-
+    // Start periodic node checking (every 2 seconds)
+    if (topicTabCheckTimer_) {
+        topicTabCheckTimer_->start(2000);
+        // Trigger immediate check by calling the lambda directly
+        QMetaObject::invokeMethod(
+            communication_,
+            [this]() {
+                auto ns_prefix = robotNamespace_;
+                if (!ns_prefix.isEmpty() && !ns_prefix.startsWith('/')) ns_prefix.prepend('/');
+                
+                QString service_name = ns_prefix + "/rosapi/nodes";
+                QString service_type = "rosapi_msgs/srv/Nodes";
+                QString service_id = "topic_tab_node_check";
+                
+                QMetaObject::invokeMethod(
+                    communication_,
+                    "callService",
+                    Qt::QueuedConnection,
+                    Q_ARG(const QString&, service_name),
+                    Q_ARG(const QString&, service_id),
+                    Q_ARG(const QString&, service_type)
+                );
+            },
+            Qt::QueuedConnection
+        );
+    }
 }
 void MainWindow::deactivateTopicTab()
 {
-    // all btn to bg color , color: white
+    // Stop periodic checking
+    if (topicTabCheckTimer_) {
+        topicTabCheckTimer_->stop();
+    }
+}
 
+void MainWindow::onNodeButtonClicked()
+{
+    QPushButton *btn = qobject_cast<QPushButton*>(sender());
+    if (!btn || !communication_) return;
+    
+    // Find the node name for this button
+    QString node_name;
+    for (auto it = topicTabNodeButtons_.begin(); it != topicTabNodeButtons_.end(); ++it) {
+        if (it.value() == btn) {
+            node_name = it.key();
+            break;
+        }
+    }
+    
+    if (node_name.isEmpty()) return;
+    
+    // Check if node is active
+    if (!topicTabActiveNodes_.contains(node_name)) {
+        QMessageBox::warning(this, "Node Inactive", 
+            QString("Node '%1' is not currently running.").arg(node_name));
+        return;
+    }
+    
+    // Request node info from rosapi/node_details service
+    auto ns_prefix = robotNamespace_;
+    if (!ns_prefix.isEmpty() && !ns_prefix.startsWith('/')) ns_prefix.prepend('/');
+    
+    QString service_name = "/rosapi/node_details";
+    QString service_type = "rosapi_msgs/srv/NodeDetails";
+    QString service_id = "node_info_" + node_name;
+    QString full_node_name = ns_prefix + node_name;
+    
+    // Build service arguments
+    QJsonObject args;
+    args["node"] = full_node_name;
+    
+    QMetaObject::invokeMethod(
+        communication_,
+        "callService",
+        Qt::QueuedConnection,
+        Q_ARG(const QString&, service_name),
+        Q_ARG(const QString&, service_id),
+        Q_ARG(const QString&, service_type),
+        Q_ARG(const QJsonObject&, args)
+    );
+    
+    qDebug() << "Requested node info for:" << full_node_name;
 }
 
 void MainWindow::initLogTab()
@@ -2081,7 +2373,49 @@ void MainWindow::onReceivedTopicMessage(const QString &topic, const QJsonObject 
     else if( currentMode == Mode::nav2_1 ) {}
 
     /* NAV2 2 TAB */
-    else if( currentMode == Mode::nav2_2 ) {}
+    else if( currentMode == Mode::nav2_2 )
+    {
+        QString tf_topic_name = "/tf";
+        
+        if (topic == tf_topic_name)
+        {
+            if (msg.isEmpty() || !msg.contains("transforms")) return;
+            
+            QJsonArray transforms = msg.value("transforms").toArray();
+            
+            for (const QJsonValue &transformValue : transforms)
+            {
+                QJsonObject transform = transformValue.toObject();
+                
+                // Get header
+                QJsonObject header = transform.value("header").toObject();
+                QString child_frame = transform.value("child_frame_id").toString();
+                QString parent_frame = header.value("frame_id").toString();
+                
+                // Get transform data
+                QJsonObject trans = transform.value("transform").toObject();
+                QJsonObject translation = trans.value("translation").toObject();
+                QJsonObject rotation = trans.value("rotation").toObject();
+                
+                double tx = translation.value("x").toDouble();
+                double ty = translation.value("y").toDouble();
+                double tz = translation.value("z").toDouble();
+                
+                double qx = rotation.value("x").toDouble();
+                double qy = rotation.value("y").toDouble();
+                double qz = rotation.value("z").toDouble();
+                double qw = rotation.value("w").toDouble();
+                
+                // Update TF tree widget
+                if (tfTreeWidget_)
+                {
+                    tfTreeWidget_->updateTransform(parent_frame, child_frame,
+                                                  tx, ty, tz,
+                                                  qx, qy, qz, qw);
+                }
+            }
+        }
+    }
 
     /* NAV2 3 TAB */
     else if( currentMode == Mode::nav2_3 ) {}
@@ -2099,70 +2433,243 @@ void MainWindow::onReceivedTopicMessage(const QString &topic, const QJsonObject 
     else if( currentMode == Mode::log ) {}
 }
 
-void MainWindow::onReceivedServiceResponse(const QString &service_name, const QString &id, const QJsonObject &msg)
+void MainWindow::onReceivedActionFeedback(const QString &action_name, const QJsonObject &feedback)
 {
-    /* TOPIC TAB */
-    if( currentMode == Mode::topic ) 
-    {
-        auto ns_prefix = robotNamespace_;
-        if (!ns_prefix.isEmpty() && !ns_prefix.startsWith('/')) ns_prefix.prepend('/');
+    if (currentMode != Mode::nav2_1) return;
+    
+    qDebug() << "Action feedback received for:" << action_name;
+    qDebug() << "Feedback data:" << feedback;
 
-        QString rosapi_service_name = ns_prefix + "/rosapi/nodes";
-        if( service_name == rosapi_service_name )
-        {
-            // Parse rosapi_msgs/srv/Nodes response and update any matching UI buttons
-            // Expected msg schema (values object from rosbridge): { "nodes": ["/node_a", "/ns/node_b", ...] }
-
-            QJsonArray nodesArray = msg.value("nodes").toArray();
-            if (nodesArray.isEmpty())
-            {
-                qDebug() << "rosapi/nodes: no nodes in response";
-                return;
-            }
-
-            for (const QJsonValue &val : nodesArray)
-            {
-                const QString rawName = val.toString();
-                if (rawName.isEmpty()) continue;
-
-                // Trim leading '/'; then remove any remaining '/' to form the objectName
-                QString trimmed = rawName;
-                if (trimmed.startsWith('/')) trimmed.remove(0, 1);
-                trimmed.remove('/');
-
-                if ( trimmed == "local_costmap/local_costmap" ) 
-                {
-                    const QString btn_name = "local_costmapBtn";
-                    if (QPushButton *btn = this->findChild<QPushButton*>(btn_name))
-                    {
-                        btn->setStyleSheet("background-color: #32CD32; color: black;");
-                    }
-                    continue;
-                }
-                else if ( trimmed == "global_costmap/global_costmap" )
-                { 
-                    const QString btn_name = "global_costmapBtn";
-                    if (QPushButton *btn = this->findChild<QPushButton*>(btn_name))
-                    {
-                        btn->setStyleSheet("background-color: #32CD32; color: black;");
-                    }
-                    continue;
-                }
-
-                const QString btnObjectName = trimmed + "Btn";
-
-                // Find a QPushButton anywhere under MainWindow with that objectName
-                if (QPushButton *btn = this->findChild<QPushButton*>(btnObjectName))
-                {
-                    //ui->btnObjectName->setStyleSheet
-                    // change button color to green and text color to black
-                    btn->setStyleSheet("background-color: #32CD32; color: black;");
-                }
-            }
-
-        }
+    // Reset feedback timeout timer
+    if (nav2_1FeedbackTimer_) {
+        nav2_1FeedbackTimer_->start();
     }
 
+    // Hide null label
+    if (nav2_1NullLabel_) {
+        nav2_1NullLabel_->setVisible(false);
+    }
+
+    // Helper lambda to recursively parse JSON and create/update labels
+    std::function<void(const QString&, const QJsonValue&, int)> displayJsonValue;
+    displayJsonValue = [&](const QString& key, const QJsonValue& value, int indent) {
+        QString prefix = QString(indent * 2, ' ');
+        
+        if (value.isObject()) {
+            QJsonObject obj = value.toObject();
+            for (auto it = obj.begin(); it != obj.end(); ++it) {
+                displayJsonValue(key.isEmpty() ? it.key() : key + "." + it.key(), it.value(), indent);
+            }
+        }
+        else if (value.isArray()) {
+            QJsonArray arr = value.toArray();
+            
+            // Special handling for behavior_tree_states array
+            if (key == "behavior_tree_states") {
+                // Add new states to history (keep only last N)
+                for (int i = 0; i < arr.size(); ++i) {
+                    QString state = arr[i].toString();
+                    if (!state.isEmpty()) {
+                        nav2_1BehaviorTreeStates_.append(state);
+                        // Keep only last N entries
+                        if (nav2_1BehaviorTreeStates_.size() > nav2_1BehaviorTreeStatesMaxSize_) {
+                            nav2_1BehaviorTreeStates_.removeFirst();
+                        }
+                    }
+                }
+                
+                // Display all stored states
+                QString labelKey = "behavior_tree_states";
+                QLabel* label = nullptr;
+                
+                if (nav2_1FeedbackLabels_.contains(labelKey)) {
+                    label = nav2_1FeedbackLabels_[labelKey];
+                } else {
+                    label = new QLabel(nav2_1FeedbackWidget_);
+                    label->setStyleSheet(
+                        "QLabel {"
+                        "  font: 10pt 'SF Pro';"
+                        "  color: #03fc84;"
+                        "  background: transparent;"
+                        "  padding: 3px;"
+                        "}"
+                    );
+                    label->setWordWrap(true);
+                    nav2_1FeedbackLabels_[labelKey] = label;
+                    nav2_1FeedbackLayout_->addWidget(label);
+                }
+                
+                // Build display text with all states (oldest to newest)
+                QString displayText = QString("behavior_tree_states (last %1):\n").arg(nav2_1BehaviorTreeStatesMaxSize_);
+                for (int i = 0; i < nav2_1BehaviorTreeStates_.size(); ++i) {
+                    displayText += QString("  [%1] %2\n").arg(i + 1).arg(nav2_1BehaviorTreeStates_[i]);
+                }
+                
+                label->setText(displayText);
+                label->setVisible(true);
+                
+                return; // Skip normal array processing
+            }
+            
+            // Normal array processing for other arrays
+            for (int i = 0; i < arr.size(); ++i) {
+                displayJsonValue(key + "[" + QString::number(i) + "]", arr[i], indent);
+            }
+        }
+        else {
+            // Create or update label for this field
+            QString labelKey = key;
+            QString displayValue;
+            
+            if (value.isDouble()) {
+                displayValue = QString::number(value.toDouble(), 'f', 4);
+            } else if (value.isBool()) {
+                displayValue = value.toBool() ? "true" : "false";
+            } else if (value.isString()) {
+                displayValue = value.toString();
+            } else {
+                displayValue = "null";
+            }
+            
+            QLabel* label = nullptr;
+            if (nav2_1FeedbackLabels_.contains(labelKey)) {
+                label = nav2_1FeedbackLabels_[labelKey];
+            } else {
+                // Create new label
+                label = new QLabel(nav2_1FeedbackWidget_);
+                label->setStyleSheet(
+                    "QLabel {"
+                    "  font: 11pt 'SF Pro';"
+                    "  color: #03fc84;"
+                    "  background: transparent;"
+                    "  padding: 3px;"
+                    "}"
+                );
+                nav2_1FeedbackLabels_[labelKey] = label;
+                nav2_1FeedbackLayout_->addWidget(label);
+            }
+            
+            label->setText(QString("%1: %2").arg(labelKey, displayValue));
+            label->setVisible(true);
+        }
+    };
+
+    // Parse all feedback fields
+    displayJsonValue("", feedback, 0);
+}
+
+void MainWindow::onReceivedServiceResponse(const QString &service_name, const QString &id, const QJsonObject &msg)
+{
+    qDebug() << "Service response received. Service:" << service_name << ", ID:" << id;
+    qDebug() << "Response values:" << msg;
+    
+    // Handle topic tab node checking
+    if (id == "topic_tab_node_check" && currentMode == Mode::topic) {
+        // Extract nodes array from response
+        QJsonArray nodes_array = msg.value("nodes").toArray();
+        QStringList active_nodes;
+        
+        for (const QJsonValue &node_val : nodes_array) {
+            QString node_name = node_val.toString();
+            // Remove namespace prefix if present
+            if (!robotNamespace_.isEmpty()) {
+                if (node_name.startsWith(robotNamespace_)) {
+                    node_name.remove(0, robotNamespace_.length());
+                }
+            }
+            active_nodes.append(node_name);
+        }
+        
+        qDebug() << "Active nodes:" << active_nodes;
+        
+        // Store active nodes list
+        topicTabActiveNodes_ = active_nodes;
+        
+        // Update button colors based on node status
+        for (auto it = topicTabNodeButtons_.begin(); it != topicTabNodeButtons_.end(); ++it) {
+            QString node_name = it.key();
+            QPushButton *btn = it.value();
+            
+            if (!btn) continue;
+            
+            if (active_nodes.contains(node_name)) {
+                // Node exists - green background
+                btn->setStyleSheet(
+                    "QPushButton {"
+                    "  background: rgb(0, 255, 0);"
+                    "  font: 14px solid;"
+                    "  color: black;"
+                    "}"
+                );
+            } else {
+                // Node not found - red background
+                btn->setStyleSheet(
+                    "QPushButton {"
+                    "  background: rgb(246, 97, 81);"
+                    "  font: 14px solid;"
+                    "  color: white;"
+                    "}"
+                );
+            }
+        }
+    }
+    // Handle node info request response
+    else if (id.startsWith("node_info_")) {
+        QString node_name = id.mid(10); // Remove "node_info_" prefix
+        
+        // Extract node details from response
+        QJsonArray subscribing = msg.value("subscribing").toArray();
+        QJsonArray publishing = msg.value("publishing").toArray();
+        QJsonArray services = msg.value("services").toArray();
+        
+        QString info_text = QString("Node: %1\n\n").arg(node_name);
+        
+        // Subscribing topics
+        info_text += "Subscribing Topics:\n";
+        if (subscribing.isEmpty()) {
+            info_text += "  (none)\n";
+        } else {
+            for (const QJsonValue &topic : subscribing) {
+                info_text += QString("  - %1\n").arg(topic.toString());
+            }
+        }
+        info_text += "\n";
+        
+        // Publishing topics
+        info_text += "Publishing Topics:\n";
+        if (publishing.isEmpty()) {
+            info_text += "  (none)\n";
+        } else {
+            for (const QJsonValue &topic : publishing) {
+                info_text += QString("  - %1\n").arg(topic.toString());
+            }
+        }
+        info_text += "\n";
+        
+        // Services
+        info_text += "Services:\n";
+        if (services.isEmpty()) {
+            info_text += "  (none)\n";
+        } else {
+            for (const QJsonValue &service : services) {
+                info_text += QString("  - %1\n").arg(service.toString());
+            }
+        }
+        
+        // Show dialog
+        QMessageBox msgBox(this);
+        msgBox.setWindowTitle("Node Information");
+        msgBox.setText(info_text);
+        msgBox.setIcon(QMessageBox::Information);
+        msgBox.setStandardButtons(QMessageBox::Ok);
+        msgBox.setStyleSheet(
+            "QMessageBox { background-color: #2e2e2e; color: #03fc84; }"
+            "QLabel { color: #03fc84; font: 10pt 'SF Pro'; }"
+            "QPushButton { background-color: #444; color: white; padding: 5px 15px; border-radius: 3px; }"
+            "QPushButton:hover { background-color: #555; }"
+        );
+        msgBox.exec();
+    }
 }
 
 void MainWindow::robotVelocityToWheelRpms(double linear_velocity, double angular_velocity, double wheel_radius, double wheel_seperation, int &left_rpm, int &right_rpm)

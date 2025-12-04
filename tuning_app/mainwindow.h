@@ -9,6 +9,7 @@
 #include "design/rom_design.hpp"
 #include "design/covarianceDisplay.hpp"
 #include "design/rom_structures.h"
+#include "design/tf_tree_widget.hpp"
 #include "communication/ros_bridge_client.hpp"
 
 // Forward declare RomMapWidget (defined in sdk/rom_map_widget.hpp)
@@ -39,6 +40,9 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+    void setConnectionParams(const QString &ip, const QString &password, const QString &ns = "");
+    void autoConnect();
+    void switchToControlTab();
     void createCommunicationClient(const QString &robot_ns, const QString &host, quint16 port);
 
     void initRos2ControlTab();
@@ -99,6 +103,7 @@ private slots:
     // from web socket
     void onReceivedTopicMessage(const QString &topic, const QJsonObject &msg);
     void onReceivedServiceResponse(const QString &service_name, const QString &id, const QJsonObject &msg);
+    void onReceivedActionFeedback(const QString &action_name, const QJsonObject &feedback);
 
 
 protected:
@@ -137,6 +142,27 @@ private:
     RomYawCovarianceGraph *ekfHeadingCovarianceGraphPtr_ = nullptr;
 
     CartoRomMapWidget *mapWidgetPtr_ = nullptr;
+
+    // nav2_1 - action feedback display
+    QScrollArea *nav2_1ScrollArea_ = nullptr;
+    QWidget *nav2_1FeedbackWidget_ = nullptr;
+    QVBoxLayout *nav2_1FeedbackLayout_ = nullptr;
+    QLabel *nav2_1NullLabel_ = nullptr;
+    QTimer *nav2_1FeedbackTimer_ = nullptr;
+    QMap<QString, QLabel*> nav2_1FeedbackLabels_; // key: field name, value: label widget
+    QStringList nav2_1BehaviorTreeStates_; // Keep last N behavior tree states
+    const int nav2_1BehaviorTreeStatesMaxSize_ = 20; // Maximum number of states to keep
+
+    // nav2_2 - TF tree visualization
+    TFTreeWidget *tfTreeWidget_ = nullptr;
+
+    // topic tab - node status monitoring
+    QMap<QString, QPushButton*> topicTabNodeButtons_; // key: node name, value: button widget
+    QTimer *topicTabCheckTimer_ = nullptr;
+    QStringList topicTabActiveNodes_; // List of currently active nodes
+    
+private slots:
+    void onNodeButtonClicked();
 
 };
 #endif // MAINWINDOW_H

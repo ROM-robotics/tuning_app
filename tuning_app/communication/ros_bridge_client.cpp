@@ -173,8 +173,28 @@ void rom_dynamics::communication::RosBridgeClient::onTextMessageReceived(const Q
     {
         const QString topic = obj.value("topic").toString();
         
+        // Check if this is an action feedback message
+        if (topic.contains("/_action/feedback"))
+        {
+            // Extract action name from topic (remove namespace and /_action/feedback)
+            QString action_name = topic;
+            if (!m_robotNamespace.isEmpty())
+            {
+                action_name.remove(0, m_robotNamespace.length());
+            }
+            action_name.remove("/_action/feedback");
+            
+            QJsonObject msg_obj = obj.value("msg").toObject();
+            QJsonObject feedback = msg_obj.value("feedback").toObject();
+            
+            emit receivedActionFeedback(action_name, feedback);
+            qDebug() << "Action feedback received for:" << action_name;
+        }
+        else
+        {
             emit receivedTopicMessage(topic, obj.value("msg").toObject());
             // qDebug() << "receivedTopicMessage emitted" << obj;
+        }
     }
     // ⭐ Service Response ကို Handle လုပ်ခြင်း
     else if (op == "service_response") 
@@ -187,7 +207,7 @@ void rom_dynamics::communication::RosBridgeClient::onTextMessageReceived(const Q
         QJsonObject response_values = obj.value("values").toObject(); 
 
         qDebug() << response_id << ", " << response_values;   
-        //emit receivedServiceResponse(service_name, response_id, response_values); 
+        emit receivedServiceResponse("", response_id, response_values); 
         
         #ifdef ROM_DEBUG
             qDebug() << "Received service response. ID:" << response_id << ", Service:" << service_name;
@@ -239,6 +259,41 @@ void rom_dynamics::communication::RosBridgeClient::unsubscribeTopic(const QStrin
 
 }
 
+// ACTION FEEDBACK SUBSCRIPTIONS
+void rom_dynamics::communication::RosBridgeClient::subscribeActionFeedback(const QString &action_name, const QString &action_type)
+{
+    if (!isConnected())
+    {
+        connectToServer();
+    }
+
+    // Action feedback topic format: /action_name/_action/feedback
+    QString feedback_topic = m_robotNamespace + action_name + "/_action/feedback";
+    QString feedback_type = action_type + "_FeedbackMessage";
+
+    QJsonObject msg;
+    msg["op"] = "subscribe";
+    msg["topic"] = feedback_topic;
+    msg["type"] = feedback_type;
+    sendJson(msg);
+
+    qDebug() << "Subscribed to action feedback:" << feedback_topic << "Type:" << feedback_type;
+}
+
+void rom_dynamics::communication::RosBridgeClient::unsubscribeActionFeedback(const QString &action_name)
+{
+    if (!isConnected()) return;
+
+    QString feedback_topic = m_robotNamespace + action_name + "/_action/feedback";
+
+    QJsonObject msg;
+    msg["op"] = "unsubscribe";
+    msg["topic"] = feedback_topic;
+    sendJson(msg);
+
+    qDebug() << "Unsubscribed from action feedback:" << feedback_topic;
+}
+
 
 void rom_dynamics::communication::RosBridgeClient::getTopicsList(const QString &id)
 {
@@ -248,6 +303,11 @@ void rom_dynamics::communication::RosBridgeClient::getTopicsList(const QString &
 
 
 void rom_dynamics::communication::RosBridgeClient::callService(const QString &service_name, const QString &id, const QString &msg_type)
+{
+    callService(service_name, id, msg_type, QJsonObject());
+}
+
+void rom_dynamics::communication::RosBridgeClient::callService(const QString &service_name, const QString &id, const QString &msg_type, const QJsonObject &args)
 {
     if (!isConnected())
     {
@@ -260,17 +320,15 @@ void rom_dynamics::communication::RosBridgeClient::callService(const QString &se
         return;
     }
     
-    // rosbridge protocol: { "op": "call", "service": "...", "args": {...}, "id": "..." }
+    // rosbridge protocol: { "op": "call_service", "service": "...", "args": {...}, "id": "..." }
 
     QString service_name_with_ns = m_robotNamespace + service_name;
 
     QJsonObject msg;
-    msg["op"] = "call";
+    msg["op"] = "call_service";
     msg["service"] = service_name_with_ns;
     msg["type"] = msg_type;
     msg["id"] = id;
-
-    QJsonObject args;
     msg["args"] = args;
 
     sendJson(msg);

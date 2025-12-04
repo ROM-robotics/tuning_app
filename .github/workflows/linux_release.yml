@@ -1,0 +1,145 @@
+name: Linux Qt AppImage Release
+
+permissions:
+  contents: write
+
+on:
+  # Tag အသစ်တစ်ခု (ဥပမာ: v1.0.0) push လုပ်မှသာ အလုပ်လုပ်မည်
+  push:
+    tags:
+      - 'linux-v[0-9]+.[0-9]+.[0-9]+'
+    # branches:
+    #   - arc-humble-release
+  # Manual trigger ကို ခွင့်ပြုခြင်း (GitHub UI မှ Run workflow နှိပ်ပြီး run လို့ရမည်)
+  workflow_dispatch:
+
+jobs:
+  build_linux_appimage:
+    runs-on: ubuntu-22.04 # Linux Build အတွက်
+
+    steps:
+      - name: 1. Checkout Code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: 2. Install Qt 6.8.2
+        # Qt ကို အလိုအလျောက် Install လုပ်ပေးမယ့် Action
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: '6.8.2'
+          target: 'desktop'
+          modules: 'qtcharts qtwebsockets'
+          # Ubuntu 20.04 (ubuntu-latest) ကို သုံးသောကြောင့် GCC ဖြင့် အလုပ်လုပ်မည်
+
+      - name: 2.5. Install xcb-cursor library
+        run: sudo apt-get update && sudo apt-get install -y libxcb-cursor0
+
+      - name: 2.6. Install Eigen
+        run: sudo apt-get update && sudo apt-get install -y libeigen3-dev
+
+      - name: 3. Create Build Directory
+        run: mkdir -p build
+
+      - name: 4. Configure CMake
+        # Qt 6 ကို CMake ဖြင့် သုံးသောအခါ CMAKE_PREFIX_PATH ကို သတ်မှတ်ပေးရန် လိုအပ်သည်
+        run: |
+          cmake -S tuning_app/tuning_app -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_PREFIX_PATH=${{ env.Qt6_DIR }} \
+            -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install
+
+      - name: 5. Build Qt Application (Release)
+        run: cmake --build build --config Release -j$(nproc)
+
+      - name: 5.5. Install Qt Application
+        run: cmake --install build
+
+      - name: 6. Deploy Qt Binaries with linuxdeployqt
+        # linuxdeployqt ကို download လုပ်ပြီး Executable အဖြစ် ပြောင်းသည်
+        run: |
+          # linuxdeployqt ကို download လုပ်ခြင်း
+          wget -q -O linuxdeployqt https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage
+          chmod +x linuxdeployqt
+
+          # AppDir ဖွဲ့စည်းပုံကို စတင်တည်ဆောက်ခြင်း
+          mkdir -p AppDir/usr/bin
+          cp install/bin/tuning_app AppDir/usr/bin/
+
+          # .desktop file ကို AppDir ထဲမှာ ဖန်တီးခြင်း
+          mkdir -p AppDir/usr/share/applications
+          cat > AppDir/usr/share/applications/tuning_app.desktop << 'EOF'
+          [Desktop Entry]
+          Type=Application
+          Name=ROM Tuning App
+          Comment=Multi-robot dynamics visualization and control
+          Exec=tuning_app
+          Icon=tuning_app
+          Categories=Development;Qt;
+          Version=1.0
+          EOF
+
+          # Copy optional icon into AppDir so linuxdeployqt can pick it up
+          # Replace 'your_icon.png' with the actual icon filename inside resources/icons
+          ICON_SRC="tuning_app/tuning_app/APP/AppDir/tuning_app.png"
+          if [ -f "$ICON_SRC" ]; then
+            mkdir -p AppDir/usr/share/icons
+            cp "$ICON_SRC" AppDir/usr/share/icons/
+            echo "Copied icon $ICON_SRC to AppDir/usr/share/icons/"
+          else
+            echo "Icon $ICON_SRC not found; skipping copy"
+          fi
+
+          # linuxdeployqt ကို Run ပြီး AppImage ဖန်တီးခြင်း
+          # -appimage ဖြင့် AppImage ဖိုင် ထွက်လာမည်
+          ./linuxdeployqt AppDir/usr/share/applications/tuning_app.desktop -appimage
+
+      - name: 7. Rename AppImage for Release
+        # Tag နာမည် (ဥပမာ v1.0.0) ကို ဖိုင်နာမည်မှာ ထည့်ပြီး ပြင်ဆင်ခြင်း
+        id: rename_appimage
+        run: |
+          # Tag push ဖြစ်လျှင် tag name ကို သုံးမည်၊ မဟုတ်လျှင် commit SHA ကို သုံးမည်
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            VERSION_NAME=${{ github.ref_name }}
+          else
+            VERSION_NAME="dev-$(echo ${{ github.sha }} | cut -c1-7)"
+          fi
+          
+          # Find the generated AppImage file (linuxdeployqt creates based on Name field)
+          APPIMAGE_FILE=$(ls *-x86_64.AppImage 2>/dev/null | head -n1)
+          if [ -z "$APPIMAGE_FILE" ]; then
+            echo "Error: No AppImage file found"
+            exit 1
+          fi
+          echo "Found AppImage: $APPIMAGE_FILE"
+          FINAL_NAME="tuning_app-linux-${VERSION_NAME}.AppImage"
+          mv "$APPIMAGE_FILE" "$FINAL_NAME"
+          echo "version_name=${VERSION_NAME}" >> $GITHUB_OUTPUT
+          echo "appimage_file=${FINAL_NAME}" >> $GITHUB_OUTPUT
+
+      - name: 7.5. Upload AppImage as Artifact (for non-tag builds)
+        # Tag မဟုတ်ဘဲ branch push များအတွက် artifact အဖြစ် upload လုပ်ခြင်း
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: AppImage-Linux
+          path: ${{ steps.rename_appimage.outputs.appimage_file }}
+          retention-days: 30
+
+      - name: 8. Upload AppImage as GitHub Release Asset
+        # softprops/action-gh-release ကို သုံးပြီး release assets တင်ခြင်း
+        # Tag push ဖြစ်မှသာ Release တင်မည် (branch push များတွင် skip လုပ်မည်)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          # Tag ကို အသုံးပြုခြင်း
+          tag_name: ${{ github.ref_name }}
+          # Asset အဖြစ် တင်မည့် ဖိုင်
+          files: ${{ steps.rename_appimage.outputs.appimage_file }}
+          # Release Notes အလိုအလျောက် ရေးသားခြင်း
+          body: |
+            ## 🎉 Release ${{ github.ref_name }} (Linux)
+
+            This release contains the AppImage binary for the Linux platform.
+
+            * Built with **Qt 6.8.2** and **CMake**.

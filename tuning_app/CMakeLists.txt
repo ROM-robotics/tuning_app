@@ -20,6 +20,8 @@ qt_add_executable(tuning_app
     design/readmeviewer.cpp
     design/covarianceDisplay.hpp
     design/covarianceDisplay.cpp
+    design/tf_tree_widget.hpp
+    design/tf_tree_widget.cpp
     sdk/rom_map_widget.hpp
     sdk/rom_time.cpp
     sdk/rom_map_widget.cpp

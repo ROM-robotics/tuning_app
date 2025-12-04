@@ -33,6 +33,9 @@ signals:
     // --------------------------------- TOPIC SUBSCRIPTIONS
     void receivedTopicMessage(const QString &topic_name, const QJsonObject &msg);
 
+    // --------------------------------- ACTION FEEDBACK
+    void receivedActionFeedback(const QString &action_name, const QJsonObject &feedback);
+
     // ⭐ rosapi related, and all services that we request from mainwindow
     void receivedServiceResponse(const QString &service_name, const QString &id, const QJsonObject &response_values);
 
@@ -46,10 +49,16 @@ public slots:
     void subscribeTopic(const QString &topic_name, const QString &msg_type);
     void unsubscribeTopic(const QString &topic_name);
 
+    // --------------------------------- ACTION SUBSCRIPTIONS
+    void subscribeActionFeedback(const QString &action_name, const QString &action_type);
+    void unsubscribeActionFeedback(const QString &action_name);
+
     // ⭐ rosapi related
     void getTopicsList(const QString &id);
     // ⭐ Helper function for rosapi service call
     void callService(const QString &service_name, const QString &id, const QString &msg_type);
+    // ⭐ Helper function for rosapi service call with arguments
+    void callService(const QString &service_name, const QString &id, const QString &msg_type, const QJsonObject &args);
     
 private slots:
     void onSocketConnected();

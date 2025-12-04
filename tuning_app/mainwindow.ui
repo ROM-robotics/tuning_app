@@ -2028,9 +2028,8 @@ font: 14px solid;
        <item>
         <widget class="QPushButton" name="diff_controllerBtn">
          <property name="styleSheet">
-          <string notr="true">background: rgb(0, 255, 0);
-font: 14px solid;
-color: black;</string>
+          <string notr="true">background: rgb(246, 97, 81);
+font: 14px solid;</string>
          </property>
          <property name="text">
           <string>/diff_controller</string>

@@ -1,14 +1,19 @@
 # rom sdk
 ```
-namespace rom_dynamics {
-    namespace robots {
+namespace rom_dynamics 
+{
+    namespace robots 
+    {
 
     }
-    namespace communication {
+    namespace communication 
+    {
 
     }
-    namespace ui {
-        namespace qt {
+    namespace ui 
+    {
+        namespace qt 
+        {
             class RomPositionCovarianceGraph;
             class RomYawCovarianceGraph;
             class RobotVelocityGraph;
@@ -16,11 +21,13 @@ namespace rom_dynamics {
             class HeadingArrow;
             class RomPolarHeadingGraph;
         }
-        namespace flutter {
+        namespace flutter 
+        {
 
         }
     }
-    namespace data_types{
+    namespace data_types
+    {
         
     }
 }
