@@ -80,14 +80,20 @@ jobs:
           EOF
 
           # Copy optional icon into AppDir so linuxdeployqt can pick it up
-          # Replace 'your_icon.png' with the actual icon filename inside resources/icons
-          ICON_SRC="tuning_app/tuning_app/APP/AppDir/tuning_app.png"
+          # linuxdeployqt expects icon at AppDir root level with same name as Icon= field
+          ICON_SRC="tuning_app/APP/AppDir/tuning_app.png"
           if [ -f "$ICON_SRC" ]; then
-            mkdir -p AppDir/usr/share/icons
-            cp "$ICON_SRC" AppDir/usr/share/icons/
-            echo "Copied icon $ICON_SRC to AppDir/usr/share/icons/"
+            # Copy to AppDir root (required by linuxdeployqt)
+            cp "$ICON_SRC" AppDir/tuning_app.png
+            # Also copy to standard icon location
+            mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
+            cp "$ICON_SRC" AppDir/usr/share/icons/hicolor/256x256/apps/tuning_app.png
+            echo "Copied icon $ICON_SRC to AppDir"
           else
-            echo "Icon $ICON_SRC not found; skipping copy"
+            echo "Warning: Icon $ICON_SRC not found; creating placeholder"
+            # Create a simple placeholder icon if not found
+            convert -size 256x256 xc:blue -pointsize 48 -fill white -gravity center \
+              -annotate +0+0 "ROM" AppDir/tuning_app.png || echo "ImageMagick not available"
           fi
 
           # linuxdeployqt ကို Run ပြီး AppImage ဖန်တီးခြင်း
