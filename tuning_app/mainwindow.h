@@ -69,6 +69,10 @@ public:
     void activateNav2_3Tab();
     void deactivateNav2_3Tab();
 
+    void initGoalTab();
+    void activateGoalTab();
+    void deactivateGoalTab();
+
     void initBtTab();
     void activateBtTab();
     void deactivateBtTab();
@@ -85,6 +89,8 @@ public:
 
     double quaternionToYawDegrees(double &qx, double &qy, double &qz, double &qw);
     double yawDegreesToQuaternion(double &yaw_degrees, double &qx, double &qy, double &qz, double &qw);
+    
+    QString formatBehaviorTree(const QString &bt_data);
 
 signals:
     //void createCommunicationClient(const QString &robot_ns, const QString &host, quint16 port);
@@ -153,16 +159,56 @@ private:
     QStringList nav2_1BehaviorTreeStates_; // Keep last N behavior tree states
     const int nav2_1BehaviorTreeStatesMaxSize_ = 20; // Maximum number of states to keep
 
-    // nav2_2 - TF tree visualization
+    // nav2_2 - action feedback display (NavigateThroughPoses)
+    QScrollArea *nav2_2ScrollArea_ = nullptr;
+    QWidget *nav2_2FeedbackWidget_ = nullptr;
+    QVBoxLayout *nav2_2FeedbackLayout_ = nullptr;
+    QLabel *nav2_2NullLabel_ = nullptr;
+    QTimer *nav2_2FeedbackTimer_ = nullptr;
+    QMap<QString, QLabel*> nav2_2FeedbackLabels_; // key: field name, value: label widget
+    QStringList nav2_2BehaviorTreeStates_; // Keep last N behavior tree states
+    const int nav2_2BehaviorTreeStatesMaxSize_ = 20; // Maximum number of states to keep
+
+    // nav2_3 - TF tree visualization
     TFTreeWidget *tfTreeWidget_ = nullptr;
+
+    // bt tab - behavior tree visualization
+    QScrollArea *btScrollArea_ = nullptr;
+    QWidget *btWidget_ = nullptr;
+    QVBoxLayout *btLayout_ = nullptr;
+    QLabel *btStatusLabel_ = nullptr;
+    QTextEdit *btTreeView_ = nullptr;
+    QString lastBehaviorTree_;
 
     // topic tab - node status monitoring
     QMap<QString, QPushButton*> topicTabNodeButtons_; // key: node name, value: button widget
     QTimer *topicTabCheckTimer_ = nullptr;
     QStringList topicTabActiveNodes_; // List of currently active nodes
+
+    // log tab - systemctl service management
+    QMap<QString, QPushButton*> logStatusButtons_;   // service name -> status button
+    QMap<QString, QPushButton*> logEnableButtons_;   // service name -> enable button
+    QMap<QString, QPushButton*> logDisableButtons_;  // service name -> disable button
+    QMap<QString, QPushButton*> logStartButtons_;    // service name -> start button
+    QMap<QString, QPushButton*> logStopButtons_;     // service name -> stop button
+    QMap<QString, QPushButton*> logLogsButtons_;     // service name -> logs button
+
+    // goal tab - navigation goal sending
+    QComboBox *goalToPoseX_ = nullptr;
+    QComboBox *goalToPoseY_ = nullptr;
+    QComboBox *goalToPoseTheta_ = nullptr;
+    QPushButton *navigateToPoseBtn_ = nullptr;
+    
+    QComboBox *goalThroughPosesX_[4];
+    QComboBox *goalThroughPosesY_[4];
+    QComboBox *goalThroughPosesTheta_[4];
+    QPushButton *navigateThroughPosesBtn_ = nullptr;
     
 private slots:
     void onNodeButtonClicked();
+    void onLogServiceButtonClicked();
+    void onNavigateToPoseClicked();
+    void onNavigateThroughPosesClicked();
 
 };
 #endif // MAINWINDOW_H

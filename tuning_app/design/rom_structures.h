@@ -180,6 +180,7 @@ enum class Mode {
     nav2_1,
     nav2_2,
     nav2_3,
+    goal,
     bt,
     topic,
     log
@@ -203,6 +204,8 @@ inline std::string ModeToString(Mode mode)
             return "nav2_2";
         case Mode::nav2_3:
             return "nav2_3";
+        case Mode::goal:
+            return "goal";
         case Mode::bt:
             return "bt";
         case Mode::topic:

@@ -1986,6 +1986,11 @@ background: transparent;</string>
       <string>navi2 3</string>
      </attribute>
     </widget>
+    <widget class="QWidget" name="goal">
+     <attribute name="title">
+      <string>Goal</string>
+     </attribute>
+    </widget>
     <widget class="QWidget" name="bt">
      <property name="styleSheet">
       <string notr="true">background: #2e2e2e;</string>

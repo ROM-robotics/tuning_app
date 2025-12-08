@@ -93,7 +93,6 @@ protected:
         framePositions["odom"] = QPointF(centerX, startY + 100);
         framePositions["base_footprint"] = QPointF(centerX, startY + 200);
         framePositions["base_link"] = QPointF(centerX, startY + 200);  // Same as base_footprint
-        framePositions["laser"] = QPointF(centerX, startY + 300);
         
         qint64 current_time = QDateTime::currentMSecsSinceEpoch();
         
