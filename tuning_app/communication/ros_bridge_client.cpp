@@ -304,14 +304,16 @@ void rom_dynamics::communication::RosBridgeClient::sendActionGoal(const QString 
 
     // Action goal topic format: /action_name/_action/send_goal
     QString goal_topic = m_robotNamespace + action_name + "/_action/send_goal";
-    QString goal_msg_type = action_type + "_SendGoal_Request";
+    //QString goal_msg_type = action_type + "_SendGoal_Request";
+    QString goal_msg_type = "nav2_msgs/action/NavigateToPose";
+    //Qstring goal_msg_type = "nav2_msgs/action/NavigateThroughPoses_SendGoal"
 
     QJsonObject goalMsg;
     goalMsg["goal_id"] = QJsonObject{{"uuid", goal_id}};
     goalMsg["goal"] = goal;
 
     QJsonObject msg;
-    msg["op"] = "publish";
+    msg["op"] = "send_action_goal";
     msg["topic"] = goal_topic;
     msg["type"] = goal_msg_type;
     msg["msg"] = goalMsg;
@@ -365,3 +367,26 @@ void rom_dynamics::communication::RosBridgeClient::callService(const QString &se
                               .arg(ROM_COLOR_GREEN).arg(service_name).arg(ROM_COLOR_RESET);
     #endif
 }
+
+
+/*
+ALLOW
+ Allowed operations: [
+ 'advertise', 
+ 'unadvertise', 
+ 'publish', 
+ 'subscribe', 
+ 'unsubscribe', 
+ 'fragment', 
+ 'advertise_service', 
+ 'call_service', 
+ 'service_response', 
+ 'unadvertise_service', 
+ 'advertise_action', 
+ 'action_feedback', 
+ 'action_result', 
+ 'send_action_goal', 
+ 'cancel_action_goal', 
+ 'unadvertise_action']
+
+*/

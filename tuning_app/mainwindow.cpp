@@ -2293,13 +2293,13 @@ void MainWindow::onLogServiceButtonClicked()
     if (action == "status") {
         command = QString("systemctl status %1").arg(fullServiceName);
     } else if (action == "enable") {
-        command = QString("sudo systemctl enable %1").arg(fullServiceName);
+        command = QString("echo '%1' | sudo -S systemctl enable %2").arg(password, fullServiceName);
     } else if (action == "disable") {
-        command = QString("sudo systemctl disable %1").arg(fullServiceName);
+        command = QString("echo '%1' | sudo -S systemctl disable %2").arg(password, fullServiceName);
     } else if (action == "start") {
-        command = QString("sudo systemctl start %1").arg(fullServiceName);
+        command = QString("echo '%1' | sudo -S systemctl start %2").arg(password, fullServiceName);
     } else if (action == "stop") {
-        command = QString("sudo systemctl stop %1").arg(fullServiceName);
+        command = QString("echo '%1' | sudo -S systemctl stop %2").arg(password, fullServiceName);
     } else if (action == "logs") {
         command = QString("journalctl -f -u %1").arg(fullServiceName);
     }
@@ -2310,7 +2310,7 @@ void MainWindow::onLogServiceButtonClicked()
     QString terminalCommand = QString(
         "gnome-terminal -- bash -c \""
         "echo 'Connecting to %1...'; "
-        "sshpass -p '%2' ssh -o StrictHostKeyChecking=no robot@%1 '%3'; "
+        "sshpass -p '%2' ssh -o StrictHostKeyChecking=no mr_robot@%1 '%3'; "
         "echo ''; echo 'Press Enter to close...'; read\""
     ).arg(ip, password, command);
 
