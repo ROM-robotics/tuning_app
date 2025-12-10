@@ -302,25 +302,19 @@ void rom_dynamics::communication::RosBridgeClient::sendActionGoal(const QString 
         return;
     }
 
-    // Action goal topic format: /action_name/_action/send_goal
-    QString goal_topic = m_robotNamespace + action_name + "/_action/send_goal";
-    //QString goal_msg_type = action_type + "_SendGoal_Request";
-    QString goal_msg_type = "nav2_msgs/action/NavigateToPose";
-    //Qstring goal_msg_type = "nav2_msgs/action/NavigateThroughPoses_SendGoal"
-
-    QJsonObject goalMsg;
-    goalMsg["goal_id"] = QJsonObject{{"uuid", goal_id}};
-    goalMsg["goal"] = goal;
+    // ROSbridge action goal format
+    QString action_path = m_robotNamespace + action_name;
 
     QJsonObject msg;
     msg["op"] = "send_action_goal";
-    msg["topic"] = goal_topic;
-    msg["type"] = goal_msg_type;
-    msg["msg"] = goalMsg;
+    msg["action"] = action_path;
+    msg["action_type"] = action_type;
+    msg["goal"] = goal;
+    msg["goal_id"] = goal_id;
     
     sendJson(msg);
 
-    qDebug() << "Sent action goal to:" << goal_topic << "ID:" << goal_id;
+    qDebug() << "Sent action goal:" << action_path << "ID:" << goal_id;
 }
 
 
