@@ -294,29 +294,6 @@ void rom_dynamics::communication::RosBridgeClient::unsubscribeActionFeedback(con
     qDebug() << "Unsubscribed from action feedback:" << feedback_topic;
 }
 
-void rom_dynamics::communication::RosBridgeClient::sendActionGoal(const QString &action_name, const QString &goal_id, const QString &action_type, const QJsonObject &goal)
-{
-    if (!isConnected())
-    {
-        qWarning() << "Cannot send action goal: not connected to ROS bridge";
-        return;
-    }
-
-    // ROSbridge action goal format
-    QString action_path = m_robotNamespace + action_name;
-
-    QJsonObject msg;
-    msg["op"] = "send_action_goal";
-    msg["action"] = action_path;
-    msg["action_type"] = action_type;
-    msg["goal"] = goal;
-    msg["goal_id"] = goal_id;
-    
-    sendJson(msg);
-
-    qDebug() << "Sent action goal:" << action_path << "ID:" << goal_id;
-}
-
 
 void rom_dynamics::communication::RosBridgeClient::getTopicsList(const QString &id)
 {

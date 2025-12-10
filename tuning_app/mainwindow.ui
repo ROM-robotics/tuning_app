@@ -1975,7 +1975,7 @@ background: transparent;</string>
       <string notr="true">background: #2e2e2e;</string>
      </property>
      <attribute name="title">
-      <string>navi2 2</string>
+      <string>Nav2_T</string>
      </attribute>
     </widget>
     <widget class="QWidget" name="navi2_three">

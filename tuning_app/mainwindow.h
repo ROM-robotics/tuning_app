@@ -61,10 +61,6 @@ public:
     void activateNav2_1Tab();
     void deactivateNav2_1Tab();
 
-    void initNav2_2Tab();
-    void activateNav2_2Tab();
-    void deactivateNav2_2Tab();
-
     void initNav2_3Tab();
     void activateNav2_3Tab();
     void deactivateNav2_3Tab();
@@ -72,6 +68,9 @@ public:
     void initGoalTab();
     void activateGoalTab();
     void deactivateGoalTab();
+    void initNav2TTab();
+    void activateNav2TTab();
+    void deactivateNav2TTab();
 
     void initBtTab();
     void activateBtTab();
@@ -159,16 +158,6 @@ private:
     QStringList nav2_1BehaviorTreeStates_; // Keep last N behavior tree states
     const int nav2_1BehaviorTreeStatesMaxSize_ = 20; // Maximum number of states to keep
 
-    // nav2_2 - action feedback display (NavigateThroughPoses)
-    QScrollArea *nav2_2ScrollArea_ = nullptr;
-    QWidget *nav2_2FeedbackWidget_ = nullptr;
-    QVBoxLayout *nav2_2FeedbackLayout_ = nullptr;
-    QLabel *nav2_2NullLabel_ = nullptr;
-    QTimer *nav2_2FeedbackTimer_ = nullptr;
-    QMap<QString, QLabel*> nav2_2FeedbackLabels_; // key: field name, value: label widget
-    QStringList nav2_2BehaviorTreeStates_; // Keep last N behavior tree states
-    const int nav2_2BehaviorTreeStatesMaxSize_ = 20; // Maximum number of states to keep
-
     // nav2_3 - TF tree visualization
     TFTreeWidget *tfTreeWidget_ = nullptr;
 
@@ -198,17 +187,33 @@ private:
     QComboBox *goalToPoseY_ = nullptr;
     QComboBox *goalToPoseTheta_ = nullptr;
     QPushButton *navigateToPoseBtn_ = nullptr;
+    QTextEdit *navigateCmdTextEdit_ = nullptr;
+    QPushButton *copyNavigateCmdBtn_ = nullptr;
     
-    QComboBox *goalThroughPosesX_[4];
-    QComboBox *goalThroughPosesY_[4];
-    QComboBox *goalThroughPosesTheta_[4];
+    // nav2_t tab - navigate through poses (4 poses)
+    QComboBox *nav2tPose1X_ = nullptr;
+    QComboBox *nav2tPose1Y_ = nullptr;
+    QComboBox *nav2tPose1Theta_ = nullptr;
+    QComboBox *nav2tPose2X_ = nullptr;
+    QComboBox *nav2tPose2Y_ = nullptr;
+    QComboBox *nav2tPose2Theta_ = nullptr;
+    QComboBox *nav2tPose3X_ = nullptr;
+    QComboBox *nav2tPose3Y_ = nullptr;
+    QComboBox *nav2tPose3Theta_ = nullptr;
+    QComboBox *nav2tPose4X_ = nullptr;
+    QComboBox *nav2tPose4Y_ = nullptr;
+    QComboBox *nav2tPose4Theta_ = nullptr;
     QPushButton *navigateThroughPosesBtn_ = nullptr;
+    QTextEdit *nav2tCmdTextEdit_ = nullptr;
+    QPushButton *copyNav2tCmdBtn_ = nullptr;
     
 private slots:
     void onNodeButtonClicked();
     void onLogServiceButtonClicked();
     void onNavigateToPoseClicked();
+    void onCopyNavigateCmdClicked();
     void onNavigateThroughPosesClicked();
+    void onCopyNav2TCmdClicked();
 
 };
 #endif // MAINWINDOW_H

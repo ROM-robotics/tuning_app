@@ -19,6 +19,9 @@
 #include <QQuickItem>
 #include <QTimer>
 #include <QDateTime>
+#include <QClipboard>
+#include <QGuiApplication>
+#include <QTextEdit>
 #include <cmath>
 
 #include "design/rom_design.hpp"
@@ -66,9 +69,9 @@ MainWindow::MainWindow(QWidget *parent)
     initEkfTab();
     initCartoTab();
     initNav2_1Tab();
-    initNav2_2Tab();
     initNav2_3Tab();
     initGoalTab();
+    initNav2TTab();
     initBtTab();
     initTopicTab();
     initLogTab();
@@ -140,7 +143,7 @@ void MainWindow::onTabChanged(int index)
             break;
         case 5:
             if(!this->isConnected_) { ui->tabWidget->setCurrentIndex(0); return; }
-            currentMode = Mode::nav2_2;
+            currentMode = Mode::nav2_t;
             break;
         case 6:
             if(!this->isConnected_) { ui->tabWidget->setCurrentIndex(0); return; }
@@ -178,7 +181,6 @@ void MainWindow::onTabChanged(int index)
             // deactivateEkfTab();
             // deactivateCartoTab();
             // deactivateNav2_1Tab();
-            // deactivateNav2_2Tab();
             // deactivateNav2_3Tab();
             // deactivateBtTab();
             // deactivateTopicTab();
@@ -199,8 +201,8 @@ void MainWindow::onTabChanged(int index)
                 case Mode::nav2_1:
                     deactivateNav2_1Tab();
                     break;
-                case Mode::nav2_2:
-                    deactivateNav2_2Tab();
+                case Mode::nav2_t:
+                    deactivateNav2TTab();
                     break;
                 case Mode::nav2_3:
                     deactivateNav2_3Tab();
@@ -227,7 +229,6 @@ void MainWindow::onTabChanged(int index)
             // deactivateEkfTab();
             // deactivateCartoTab();
             // deactivateNav2_1Tab();
-            // deactivateNav2_2Tab();
             // deactivateNav2_3Tab();
             // deactivateGoalTab();
             // deactivateBtTab();
@@ -246,8 +247,8 @@ void MainWindow::onTabChanged(int index)
                 case Mode::nav2_1:
                     deactivateNav2_1Tab();
                     break;
-                case Mode::nav2_2:
-                    deactivateNav2_2Tab();
+                case Mode::nav2_t:
+                    deactivateNav2TTab();
                     break;
                 case Mode::nav2_3:
                     deactivateNav2_3Tab();
@@ -274,7 +275,6 @@ void MainWindow::onTabChanged(int index)
             // deactivateRos2ControlTab();
             // deactivateCartoTab();
             // deactivateNav2_1Tab();
-            // deactivateNav2_2Tab();
             // deactivateNav2_3Tab();
             // deactivateGoalTab();
             // deactivateBtTab();
@@ -294,8 +294,8 @@ void MainWindow::onTabChanged(int index)
                 case Mode::nav2_1:
                     deactivateNav2_1Tab();
                     break;
-                case Mode::nav2_2:
-                    deactivateNav2_2Tab();
+                case Mode::nav2_t:
+                    deactivateNav2TTab();
                     break;
                 case Mode::nav2_3:
                     deactivateNav2_3Tab();
@@ -322,7 +322,6 @@ void MainWindow::onTabChanged(int index)
             // deactivateRos2ControlTab();
             // deactivateEkfTab();
             // deactivateNav2_1Tab();
-            // deactivateNav2_2Tab();
             // deactivateNav2_3Tab();
             // deactivateGoalTab();
             // deactivateBtTab();
@@ -341,8 +340,8 @@ void MainWindow::onTabChanged(int index)
                 case Mode::nav2_1:
                     deactivateNav2_1Tab();
                     break;
-                case Mode::nav2_2:
-                    deactivateNav2_2Tab();
+                case Mode::nav2_t:
+                    deactivateNav2TTab();
                     break;
                 case Mode::nav2_3:
                     deactivateNav2_3Tab();
@@ -370,7 +369,6 @@ void MainWindow::onTabChanged(int index)
             // deactivateRos2ControlTab();
             // deactivateEkfTab();
             // deactivateCartoTab();
-            // deactivateNav2_2Tab();
             // deactivateNav2_3Tab();
             // deactivateGoalTab();
             // deactivateBtTab();
@@ -389,8 +387,8 @@ void MainWindow::onTabChanged(int index)
                 case Mode::carto:
                     deactivateCartoTab();
                     break;
-                case Mode::nav2_2:
-                    deactivateNav2_2Tab();
+                case Mode::nav2_t:
+                    deactivateNav2TTab();
                     break;
                 case Mode::nav2_3:
                     deactivateNav2_3Tab();
@@ -412,19 +410,10 @@ void MainWindow::onTabChanged(int index)
             }
 
             break;
-        case Mode::nav2_2:
-            activateNav2_2Tab();
+        case Mode::nav2_t:
+            activateNav2TTab();
 
-            // deactivateRos2ControlTab();
-            // deactivateEkfTab();
-            // deactivateCartoTab();
-            // deactivateNav2_1Tab();
-            // deactivateNav2_3Tab();
-            // deactivateGoalTab();
-            // deactivateBtTab();
-            // deactivateTopicTab();
-            // deactivateLogTab();
-            qDebug() << " activateNav2_2Tab called  ";
+            qDebug() << " activateNav2TTab called  ";
 
             switch(previousMode)
             {
@@ -467,7 +456,6 @@ void MainWindow::onTabChanged(int index)
             // deactivateEkfTab();
             // deactivateCartoTab();
             // deactivateNav2_1Tab();
-            // deactivateNav2_2Tab();
             // deactivateGoalTab();
             // deactivateBtTab();
             // deactivateTopicTab();
@@ -488,8 +476,8 @@ void MainWindow::onTabChanged(int index)
                 case Mode::nav2_1:
                     deactivateNav2_1Tab();
                     break;
-                case Mode::nav2_2:
-                    deactivateNav2_2Tab();
+                case Mode::nav2_t:
+                    deactivateNav2TTab();
                     break;
                 case Mode::goal:
                     deactivateGoalTab();
@@ -527,8 +515,8 @@ void MainWindow::onTabChanged(int index)
                 case Mode::nav2_1:
                     deactivateNav2_1Tab();
                     break;
-                case Mode::nav2_2:
-                    deactivateNav2_2Tab();
+                case Mode::nav2_t:
+                    deactivateNav2TTab();
                     break;
                 case Mode::nav2_3:
                     deactivateNav2_3Tab();
@@ -554,7 +542,6 @@ void MainWindow::onTabChanged(int index)
             // deactivateEkfTab();
             // deactivateCartoTab();
             // deactivateNav2_1Tab();
-            // deactivateNav2_2Tab();
             // deactivateNav2_3Tab();
             // deactivateGoalTab();
             // deactivateTopicTab();
@@ -575,8 +562,8 @@ void MainWindow::onTabChanged(int index)
                 case Mode::nav2_1:
                     deactivateNav2_1Tab();
                     break;
-                case Mode::nav2_2:
-                    deactivateNav2_2Tab();
+                case Mode::nav2_t:
+                    deactivateNav2TTab();
                     break;
                 case Mode::nav2_3:
                     deactivateNav2_3Tab();
@@ -602,7 +589,6 @@ void MainWindow::onTabChanged(int index)
             // deactivateEkfTab();
             // deactivateCartoTab();
             // deactivateNav2_1Tab();
-            // deactivateNav2_2Tab();
             // deactivateNav2_3Tab();
             // deactivateGoalTab();
             // deactivateBtTab();
@@ -623,8 +609,8 @@ void MainWindow::onTabChanged(int index)
                 case Mode::nav2_1:
                     deactivateNav2_1Tab();
                     break;
-                case Mode::nav2_2:
-                    deactivateNav2_2Tab();
+                case Mode::nav2_t:
+                    deactivateNav2TTab();
                     break;
                 case Mode::nav2_3:
                     deactivateNav2_3Tab();
@@ -650,7 +636,6 @@ void MainWindow::onTabChanged(int index)
             // deactivateEkfTab();
             // deactivateCartoTab();
             // deactivateNav2_1Tab();
-            // deactivateNav2_2Tab();
             // deactivateNav2_3Tab();
             // deactivateGoalTab();
             // deactivateBtTab();
@@ -671,8 +656,8 @@ void MainWindow::onTabChanged(int index)
                 case Mode::nav2_1:
                     deactivateNav2_1Tab();
                     break;
-                case Mode::nav2_2:
-                    deactivateNav2_2Tab();
+                case Mode::nav2_t:
+                    deactivateNav2TTab();
                     break;
                 case Mode::nav2_3:
                     deactivateNav2_3Tab();
@@ -1809,128 +1794,6 @@ void MainWindow::deactivateNav2_1Tab()
     qDebug() << "Unsubscribed from NavigateToPose action feedback";
 }
 
-void MainWindow::initNav2_2Tab()
-{
-    if (ui->navi2_two)
-    {
-        qDebug() << "Initializing Nav2_2 Tab UI components";
-
-        QLayout *existing = ui->navi2_two->layout();
-        if (existing)
-        {
-            delete existing;
-            qDebug() << "Deleted existing layout in Nav2_2 Tab";
-        }
-
-        // Create main layout
-        QVBoxLayout *mainLayout = new QVBoxLayout(ui->navi2_two);
-        mainLayout->setContentsMargins(10, 10, 10, 10);
-        mainLayout->setSpacing(10);
-
-        // Create title label
-        QLabel *titleLabel = new QLabel("NavigateThroughPoses Action Feedback", ui->navi2_two);
-        titleLabel->setStyleSheet("font: 14pt 'SF Pro'; color: #03fc84; background: transparent;");
-        titleLabel->setAlignment(Qt::AlignCenter);
-        mainLayout->addWidget(titleLabel);
-
-        // Create scroll area
-        nav2_2ScrollArea_ = new QScrollArea(ui->navi2_two);
-        nav2_2ScrollArea_->setWidgetResizable(true);
-        nav2_2ScrollArea_->setStyleSheet("QScrollArea { background: #2e2e2e; border: none; }");
-
-        // Create widget to hold feedback labels
-        nav2_2FeedbackWidget_ = new QWidget();
-        nav2_2FeedbackWidget_->setStyleSheet("background: #2e2e2e;");
-        
-        nav2_2FeedbackLayout_ = new QVBoxLayout(nav2_2FeedbackWidget_);
-        nav2_2FeedbackLayout_->setContentsMargins(10, 10, 10, 10);
-        nav2_2FeedbackLayout_->setSpacing(8);
-        nav2_2FeedbackLayout_->setAlignment(Qt::AlignTop);
-
-        // Create null label (initially visible)
-        nav2_2NullLabel_ = new QLabel("Null", nav2_2FeedbackWidget_);
-        nav2_2NullLabel_->setStyleSheet("font: 20pt 'SF Pro'; color: rgb(246, 97, 81); background: transparent;");
-        nav2_2NullLabel_->setAlignment(Qt::AlignCenter);
-        nav2_2FeedbackLayout_->addWidget(nav2_2NullLabel_);
-
-        nav2_2FeedbackWidget_->setLayout(nav2_2FeedbackLayout_);
-        nav2_2ScrollArea_->setWidget(nav2_2FeedbackWidget_);
-        
-        mainLayout->addWidget(nav2_2ScrollArea_);
-        ui->navi2_two->setLayout(mainLayout);
-
-        // Create timer for feedback timeout detection
-        nav2_2FeedbackTimer_ = new QTimer(this);
-        nav2_2FeedbackTimer_->setInterval(3000); // 3 seconds
-        nav2_2FeedbackTimer_->setSingleShot(false);
-        connect(nav2_2FeedbackTimer_, &QTimer::timeout, this, [this]() {
-            // Show null state when no feedback received
-            if (nav2_2NullLabel_) {
-                nav2_2NullLabel_->setVisible(true);
-            }
-            // Hide all feedback labels
-            for (auto label : nav2_2FeedbackLabels_) {
-                label->setVisible(false);
-            }
-        });
-    }
-}
-void MainWindow::activateNav2_2Tab()
-{
-    if (!communication_) return;
-
-    QString action_name = "/navigate_through_poses";
-    QString action_type = "nav2_msgs/action/NavigateThroughPoses";
-    
-    QMetaObject::invokeMethod(
-        communication_,
-        "subscribeActionFeedback",
-        Qt::QueuedConnection,
-        Q_ARG(const QString&, action_name),
-        Q_ARG(const QString&, action_type)
-    );
-
-    // Start feedback timeout timer
-    if (nav2_2FeedbackTimer_) {
-        nav2_2FeedbackTimer_->start();
-    }
-
-    qDebug() << "Subscribed to NavigateThroughPoses action feedback";
-}
-void MainWindow::deactivateNav2_2Tab()
-{
-    if (!communication_) return;
-
-    QString action_name = "/navigate_through_poses";
-    
-    QMetaObject::invokeMethod(
-        communication_,
-        "unsubscribeActionFeedback",
-        Qt::QueuedConnection,
-        Q_ARG(const QString&, action_name)
-    );
-
-    // Stop feedback timeout timer
-    if (nav2_2FeedbackTimer_) {
-        nav2_2FeedbackTimer_->stop();
-    }
-
-    // Clear all feedback labels
-    for (auto label : nav2_2FeedbackLabels_) {
-        label->setVisible(false);
-    }
-
-    // Show null state
-    if (nav2_2NullLabel_) {
-        nav2_2NullLabel_->setVisible(true);
-    }
-
-    // Clear behavior tree states
-    nav2_2BehaviorTreeStates_.clear();
-
-    qDebug() << "Unsubscribed from NavigateThroughPoses action feedback";
-}
-
 void MainWindow::initNav2_3Tab()
 {
     if (ui->navi2_three)
@@ -2630,14 +2493,12 @@ void MainWindow::initGoalTab()
             "  selection-color: black;"
             "}"
         );
-        for (int i = -180; i <= 180; i += 15) {
+        for (int i = -179; i <= 179; i += 15) {
             thetaCombo->addItem(QString::number(i));
         }
         thetaCombo->setCurrentText("0");
         leftLayout->addWidget(thetaCombo);
         goalToPoseTheta_ = thetaCombo;  // Store pointer
-
-        leftLayout->addStretch();
 
         // NavigateToPose button
         QPushButton *navigateToPoseBtn = new QPushButton("Navigate To Pose");
@@ -2662,177 +2523,53 @@ void MainWindow::initGoalTab()
         navigateToPoseBtn_ = navigateToPoseBtn;  // Store pointer
         connect(navigateToPoseBtn, &QPushButton::clicked, this, &MainWindow::onNavigateToPoseClicked);
 
+        // Command text edit
+        QTextEdit *cmdTextEdit = new QTextEdit();
+        cmdTextEdit->setReadOnly(true);
+        cmdTextEdit->setMaximumHeight(80);
+        cmdTextEdit->setStyleSheet(
+            "QTextEdit {"
+            "  background: #3e3e3e;"
+            "  color: #03fc84;"
+            "  border: 1px solid #555;"
+            "  border-radius: 4px;"
+            "  padding: 8px;"
+            "  font: 9pt 'Courier New';"
+            "}"
+        );
+        leftLayout->addWidget(cmdTextEdit);
+        navigateCmdTextEdit_ = cmdTextEdit;  // Store pointer
+
+        // Copy button
+        QPushButton *copyBtn = new QPushButton("Copy Command");
+        copyBtn->setStyleSheet(
+            "QPushButton {"
+            "  background: #555;"
+            "  color: white;"
+            "  border: none;"
+            "  border-radius: 4px;"
+            "  padding: 8px;"
+            "  font: bold 10pt 'SF Pro';"
+            "  min-height: 30px;"
+            "}"
+            "QPushButton:hover {"
+            "  background: #666;"
+            "}"
+            "QPushButton:pressed {"
+            "  background: #444;"
+            "}"
+        );
+        leftLayout->addWidget(copyBtn);
+        copyNavigateCmdBtn_ = copyBtn;
+        connect(copyBtn, &QPushButton::clicked, this, &MainWindow::onCopyNavigateCmdClicked);
+
+        leftLayout->addStretch();
+
         leftWidget->setLayout(leftLayout);
         leftWidget->setStyleSheet("QWidget { background: #2e2e2e; border-radius: 8px; }");
 
-        // ============ RIGHT SIDE: NavigateThroughPoses ============
-        QWidget *rightWidget = new QWidget();
-        QVBoxLayout *rightLayout = new QVBoxLayout(rightWidget);
-        rightLayout->setContentsMargins(10, 10, 10, 10);
-        rightLayout->setSpacing(15);
-
-        // Right title
-        QLabel *rightTitle = new QLabel("NavigateThroughPoses");
-        rightTitle->setStyleSheet("font: bold 14pt 'SF Pro'; color: #03fc84; background: transparent;");
-        rightTitle->setAlignment(Qt::AlignCenter);
-        rightLayout->addWidget(rightTitle);
-
-        // Create scroll area for poses
-        QScrollArea *scrollArea = new QScrollArea();
-        scrollArea->setWidgetResizable(true);
-        scrollArea->setStyleSheet("QScrollArea { background: transparent; border: none; }");
-
-        QWidget *scrollWidget = new QWidget();
-        QVBoxLayout *scrollLayout = new QVBoxLayout(scrollWidget);
-        scrollLayout->setSpacing(10);
-
-        // Create 4 pose inputs
-        for (int poseIdx = 0; poseIdx < 4; ++poseIdx)
-        {
-            QGroupBox *poseGroup = new QGroupBox(QString("Pose %1").arg(poseIdx + 1));
-            poseGroup->setStyleSheet(
-                "QGroupBox {"
-                "  color: #03fc84;"
-                "  border: 1px solid #555;"
-                "  border-radius: 6px;"
-                "  margin-top: 10px;"
-                "  font: bold 11pt 'SF Pro';"
-                "  background: transparent;"
-                "}"
-                "QGroupBox::title {"
-                "  subcontrol-origin: margin;"
-                "  left: 10px;"
-                "  padding: 0 5px;"
-                "}"
-            );
-
-            QVBoxLayout *poseLayout = new QVBoxLayout();
-            poseLayout->setSpacing(8);
-
-            // X
-            QLabel *xLbl = new QLabel("X:");
-            xLbl->setStyleSheet("font: 10pt 'SF Pro'; color: white; background: transparent;");
-            poseLayout->addWidget(xLbl);
-
-            QComboBox *xCmb = new QComboBox();
-            xCmb->setStyleSheet(
-                "QComboBox {"
-                "  background: #3e3e3e;"
-                "  color: white;"
-                "  border: 1px solid #555;"
-                "  border-radius: 4px;"
-                "  padding: 5px;"
-                "  font: 10pt 'SF Pro';"
-                "}"
-                "QComboBox QAbstractItemView {"
-                "  background: #3e3e3e;"
-                "  color: white;"
-                "  selection-background-color: #03fc84;"
-                "  selection-color: black;"
-                "}"
-            );
-            for (int i = -5; i <= 5; ++i) {
-                xCmb->addItem(QString::number(i));
-            }
-            xCmb->setCurrentText("0");
-            poseLayout->addWidget(xCmb);
-            goalThroughPosesX_[poseIdx] = xCmb;  // Store pointer
-
-            // Y
-            QLabel *yLbl = new QLabel("Y:");
-            yLbl->setStyleSheet("font: 10pt 'SF Pro'; color: white; background: transparent;");
-            poseLayout->addWidget(yLbl);
-
-            QComboBox *yCmb = new QComboBox();
-            yCmb->setStyleSheet(
-                "QComboBox {"
-                "  background: #3e3e3e;"
-                "  color: white;"
-                "  border: 1px solid #555;"
-                "  border-radius: 4px;"
-                "  padding: 5px;"
-                "  font: 10pt 'SF Pro';"
-                "}"
-                "QComboBox QAbstractItemView {"
-                "  background: #3e3e3e;"
-                "  color: white;"
-                "  selection-background-color: #03fc84;"
-                "  selection-color: black;"
-                "}"
-            );
-            for (int i = -5; i <= 5; ++i) {
-                yCmb->addItem(QString::number(i));
-            }
-            yCmb->setCurrentText("0");
-            poseLayout->addWidget(yCmb);
-            goalThroughPosesY_[poseIdx] = yCmb;  // Store pointer
-
-            // Theta
-            QLabel *thetaLbl = new QLabel("Theta:");
-            thetaLbl->setStyleSheet("font: 10pt 'SF Pro'; color: white; background: transparent;");
-            poseLayout->addWidget(thetaLbl);
-
-            QComboBox *thetaCmb = new QComboBox();
-            thetaCmb->setStyleSheet(
-                "QComboBox {"
-                "  background: #3e3e3e;"
-                "  color: white;"
-                "  border: 1px solid #555;"
-                "  border-radius: 4px;"
-                "  padding: 5px;"
-                "  font: 10pt 'SF Pro';"
-                "}"
-                "QComboBox QAbstractItemView {"
-                "  background: #3e3e3e;"
-                "  color: white;"
-                "  selection-background-color: #03fc84;"
-                "  selection-color: black;"
-                "}"
-            );
-            for (int i = -180; i <= 180; i += 15) {
-                thetaCmb->addItem(QString::number(i));
-            }
-            thetaCmb->setCurrentText("0");
-            poseLayout->addWidget(thetaCmb);
-            goalThroughPosesTheta_[poseIdx] = thetaCmb;  // Store pointer
-
-            poseGroup->setLayout(poseLayout);
-            scrollLayout->addWidget(poseGroup);
-        }
-
-        scrollWidget->setLayout(scrollLayout);
-        scrollArea->setWidget(scrollWidget);
-        rightLayout->addWidget(scrollArea);
-
-        // NavigateThroughPoses button
-        QPushButton *navigateThroughPosesBtn = new QPushButton("Navigate Through Poses");
-        navigateThroughPosesBtn->setStyleSheet(
-            "QPushButton {"
-            "  background: #03fc84;"
-            "  color: black;"
-            "  border: none;"
-            "  border-radius: 6px;"
-            "  padding: 12px;"
-            "  font: bold 12pt 'SF Pro';"
-            "  min-height: 40px;"
-            "}"
-            "QPushButton:hover {"
-            "  background: #02dd75;"
-            "}"
-            "QPushButton:pressed {"
-            "  background: #01cc66;"
-            "}"
-        );
-        rightLayout->addWidget(navigateThroughPosesBtn);
-        navigateThroughPosesBtn_ = navigateThroughPosesBtn;  // Store pointer
-        connect(navigateThroughPosesBtn, &QPushButton::clicked, this, &MainWindow::onNavigateThroughPosesClicked);
-
-        rightWidget->setLayout(rightLayout);
-        rightWidget->setStyleSheet("QWidget { background: #2e2e2e; border-radius: 8px; }");
-
-        // Add both sides to main layout
+        // Add left widget to main layout
         mainLayout->addWidget(leftWidget);
-        mainLayout->addWidget(rightWidget);
 
         ui->goal->setLayout(mainLayout);
 
@@ -2852,6 +2589,42 @@ void MainWindow::deactivateGoalTab()
     qDebug() << "Goal tab deactivated";
 }
 
+void MainWindow::onCopyNavigateCmdClicked()
+{
+    // Get text from QTextEdit in the Goal tab
+    if (navigateCmdTextEdit_) {
+        QString cmd = navigateCmdTextEdit_->toPlainText();
+        if (cmd.isEmpty()) {
+            qDebug() << "No command to copy";
+            return;
+        }
+        
+        QClipboard *clipboard = QGuiApplication::clipboard();
+        clipboard->setText(cmd);
+        qDebug() << "Command copied to clipboard";
+        
+        // Visual feedback
+        QString originalStyle = copyNavigateCmdBtn_->styleSheet();
+        copyNavigateCmdBtn_->setText("Copied!");
+        copyNavigateCmdBtn_->setStyleSheet(
+            "QPushButton {"
+            "  background: #03fc84;"
+            "  color: black;"
+            "  border: none;"
+            "  border-radius: 4px;"
+            "  padding: 8px;"
+            "  font: bold 10pt 'SF Pro';"
+            "  min-height: 30px;"
+            "}"
+        );
+        
+        QTimer::singleShot(1500, this, [this, originalStyle]() {
+            copyNavigateCmdBtn_->setText("Copy Command");
+            copyNavigateCmdBtn_->setStyleSheet(originalStyle);
+        });
+    }
+}
+
 void MainWindow::onNavigateToPoseClicked()
 {
     if (!communication_) {
@@ -2865,59 +2638,306 @@ void MainWindow::onNavigateToPoseClicked()
     double theta_deg = goalToPoseTheta_->currentText().toDouble();
     double theta_rad = theta_deg * M_PI / 180.0;
 
-    qDebug() << "Sending NavigateToPose goal: x=" << x << ", y=" << y << ", theta=" << theta_deg << "deg";
-
-    // Build goal message
-    QJsonObject pose;
+    double position_x = x;
+    double position_y = y;
+    double position_z = 0.0;
     
-    // Position
-    QJsonObject position;
-    position["x"] = x;
-    position["y"] = y;
-    position["z"] = 0.0;
-    pose["position"] = position;
-
-    // Orientation (convert theta to quaternion)
-    QJsonObject orientation;
+    // Calculate quaternion from yaw angle
     double half_theta = theta_rad / 2.0;
-    orientation["x"] = 0.0;
-    orientation["y"] = 0.0;
-    orientation["z"] = sin(half_theta);
-    orientation["w"] = cos(half_theta);
-    pose["orientation"] = orientation;
+    double orientation_x = 0.0;
+    double orientation_y = 0.0;
+    double orientation_z = sin(half_theta);
+    double orientation_w = cos(half_theta);
 
-    // Frame ID
-    QJsonObject header;
-    header["frame_id"] = "map";
+    // Update QTextEdit with ROS2 action command
+    if (navigateCmdTextEdit_) {
+        QString cmd = QString(
+            "ros2 action send_goal /navigate_to_pose nav2_msgs/action/NavigateToPose "
+            "\"{pose: {header: {frame_id: 'map'}, pose: {position: {x: %1, y: %2, z: %3}, "
+            "orientation: {x: %4, y: %5, z: %6, w: %7}}}}\""
+        ).arg(position_x).arg(position_y).arg(position_z)
+         .arg(orientation_x).arg(orientation_y).arg(orientation_z).arg(orientation_w);
+        
+        navigateCmdTextEdit_->setPlainText(cmd);
+    }
+
+    qDebug() << "Sending NavigateToPose goal: x=" << x << ", y=" << y << ", theta=" << theta_deg << "deg";
     
-    QJsonObject poseStamped;
-    poseStamped["header"] = header;
-    poseStamped["pose"] = pose;
-
-    // Build goal
-    QJsonObject goal;
-    goal["pose"] = poseStamped;
-
-    // Send action goal
-    QString action_name = "/navigate_to_pose";
-    QString action_type = "nav2_msgs/action/NavigateToPose";
-    QString goal_id = "nav_to_pose_" + QString::number(QDateTime::currentMSecsSinceEpoch());
-
-    QMetaObject::invokeMethod(
-        communication_,
-        "sendActionGoal",
-        Qt::QueuedConnection,
-        Q_ARG(const QString&, action_name),
-        Q_ARG(const QString&, goal_id),
-        Q_ARG(const QString&, action_type),
-        Q_ARG(const QJsonObject&, goal)
-    );
-
-    qDebug() << "NavigateToPose goal sent with ID:" << goal_id;
+    // Open gnome-terminal with SSH login
+    qDebug() << "Opening SSH terminal to: " << robotIp_;
+    QString sshCmd = QString("sshpass -p '%1' ssh mr_robot@%2").arg(password_, robotIp_);
+    QStringList args;
+    args << "--" << "bash" << "-c" << sshCmd;
+    QProcess::startDetached("gnome-terminal", args);
     
     // Show confirmation
     if (btStatusLabel_) {
         btStatusLabel_->setText(QString("Goal sent: (%1, %2, %3°)").arg(x).arg(y).arg(theta_deg));
+    }
+}
+
+void MainWindow::initNav2TTab()
+{
+    if (ui->navi2_two)
+    {
+        qDebug() << "Initializing Nav2_T Tab UI components";
+
+        QLayout *existing = ui->navi2_two->layout();
+        if (existing)
+        {
+            delete existing;
+            qDebug() << "Deleted existing layout in Nav2_T Tab";
+        }
+
+        // Create main vertical layout
+        QVBoxLayout *mainLayout = new QVBoxLayout(ui->navi2_two);
+        mainLayout->setContentsMargins(10, 10, 10, 10);
+        mainLayout->setSpacing(15);
+
+        // Title
+        QLabel *title = new QLabel("Navigate Through Poses");
+        title->setStyleSheet("font: bold 14pt 'SF Pro'; color: #03fc84; background: transparent;");
+        title->setAlignment(Qt::AlignCenter);
+        mainLayout->addWidget(title);
+
+        // Create horizontal layout for 4 poses in a row
+        QHBoxLayout *posesLayout = new QHBoxLayout();
+        posesLayout->setSpacing(10);
+
+        // Lambda to create a pose input group
+        auto createPoseGroup = [this](int poseNum, QComboBox **xCombo, QComboBox **yCombo, QComboBox **thetaCombo) {
+            QWidget *poseWidget = new QWidget();
+            QVBoxLayout *poseLayout = new QVBoxLayout(poseWidget);
+            poseLayout->setContentsMargins(5, 5, 5, 5);
+            poseLayout->setSpacing(5);
+
+            // Pose label
+            QLabel *poseLabel = new QLabel(QString("Pose %1").arg(poseNum));
+            poseLabel->setStyleSheet("font: bold 11pt 'SF Pro'; color: #03fc84; background: transparent;");
+            poseLabel->setAlignment(Qt::AlignCenter);
+            poseLayout->addWidget(poseLabel);
+
+            // X
+            QLabel *xLabel = new QLabel("X:");
+            xLabel->setStyleSheet("font: 9pt 'SF Pro'; color: white; background: transparent;");
+            poseLayout->addWidget(xLabel);
+
+            QComboBox *xCmb = new QComboBox();
+            xCmb->setStyleSheet(
+                "QComboBox {"
+                "  background: #3e3e3e;"
+                "  color: white;"
+                "  border: 1px solid #555;"
+                "  border-radius: 4px;"
+                "  padding: 3px;"
+                "  font: 9pt 'SF Pro';"
+                "}"
+                "QComboBox:hover {"
+                "  border: 1px solid #03fc84;"
+                "}"
+                "QComboBox QAbstractItemView {"
+                "  background: #3e3e3e;"
+                "  color: white;"
+                "  selection-background-color: #03fc84;"
+                "  selection-color: black;"
+                "}"
+            );
+            for (int i = -5; i <= 5; ++i) {
+                xCmb->addItem(QString::number(i));
+            }
+            xCmb->setCurrentText("0");
+            poseLayout->addWidget(xCmb);
+            *xCombo = xCmb;
+
+            // Y
+            QLabel *yLabel = new QLabel("Y:");
+            yLabel->setStyleSheet("font: 9pt 'SF Pro'; color: white; background: transparent;");
+            poseLayout->addWidget(yLabel);
+
+            QComboBox *yCmb = new QComboBox();
+            yCmb->setStyleSheet(
+                "QComboBox {"
+                "  background: #3e3e3e;"
+                "  color: white;"
+                "  border: 1px solid #555;"
+                "  border-radius: 4px;"
+                "  padding: 3px;"
+                "  font: 9pt 'SF Pro';"
+                "}"
+                "QComboBox:hover {"
+                "  border: 1px solid #03fc84;"
+                "}"
+                "QComboBox QAbstractItemView {"
+                "  background: #3e3e3e;"
+                "  color: white;"
+                "  selection-background-color: #03fc84;"
+                "  selection-color: black;"
+                "}"
+            );
+            for (int i = -5; i <= 5; ++i) {
+                yCmb->addItem(QString::number(i));
+            }
+            yCmb->setCurrentText("0");
+            poseLayout->addWidget(yCmb);
+            *yCombo = yCmb;
+
+            // Theta
+            QLabel *thetaLabel = new QLabel("θ (deg):");
+            thetaLabel->setStyleSheet("font: 9pt 'SF Pro'; color: white; background: transparent;");
+            poseLayout->addWidget(thetaLabel);
+
+            QComboBox *thetaCmb = new QComboBox();
+            thetaCmb->setStyleSheet(
+                "QComboBox {"
+                "  background: #3e3e3e;"
+                "  color: white;"
+                "  border: 1px solid #555;"
+                "  border-radius: 4px;"
+                "  padding: 3px;"
+                "  font: 9pt 'SF Pro';"
+                "}"
+                "QComboBox:hover {"
+                "  border: 1px solid #03fc84;"
+                "}"
+                "QComboBox QAbstractItemView {"
+                "  background: #3e3e3e;"
+                "  color: white;"
+                "  selection-background-color: #03fc84;"
+                "  selection-color: black;"
+                "}"
+            );
+            for (int i = -179; i <= 179; i += 15) {
+                thetaCmb->addItem(QString::number(i));
+            }
+            thetaCmb->setCurrentText("0");
+            poseLayout->addWidget(thetaCmb);
+            *thetaCombo = thetaCmb;
+
+            poseWidget->setStyleSheet("QWidget { background: #2e2e2e; border-radius: 6px; }");
+            return poseWidget;
+        };
+
+        // Create 4 pose groups
+        posesLayout->addWidget(createPoseGroup(1, &nav2tPose1X_, &nav2tPose1Y_, &nav2tPose1Theta_));
+        posesLayout->addWidget(createPoseGroup(2, &nav2tPose2X_, &nav2tPose2Y_, &nav2tPose2Theta_));
+        posesLayout->addWidget(createPoseGroup(3, &nav2tPose3X_, &nav2tPose3Y_, &nav2tPose3Theta_));
+        posesLayout->addWidget(createPoseGroup(4, &nav2tPose4X_, &nav2tPose4Y_, &nav2tPose4Theta_));
+
+        mainLayout->addLayout(posesLayout);
+
+        // Navigate Through Poses button
+        QPushButton *navigateBtn = new QPushButton("Navigate Through Poses");
+        navigateBtn->setStyleSheet(
+            "QPushButton {"
+            "  background: #03fc84;"
+            "  color: black;"
+            "  border: none;"
+            "  border-radius: 6px;"
+            "  padding: 12px;"
+            "  font: bold 12pt 'SF Pro';"
+            "  min-height: 40px;"
+            "}"
+            "QPushButton:hover {"
+            "  background: #02dd75;"
+            "}"
+            "QPushButton:pressed {"
+            "  background: #01cc66;"
+            "}"
+        );
+        mainLayout->addWidget(navigateBtn);
+        navigateThroughPosesBtn_ = navigateBtn;
+        connect(navigateBtn, &QPushButton::clicked, this, &MainWindow::onNavigateThroughPosesClicked);
+
+        // Command text edit
+        QTextEdit *cmdTextEdit = new QTextEdit();
+        cmdTextEdit->setReadOnly(true);
+        cmdTextEdit->setMaximumHeight(100);
+        cmdTextEdit->setStyleSheet(
+            "QTextEdit {"
+            "  background: #3e3e3e;"
+            "  color: #03fc84;"
+            "  border: 1px solid #555;"
+            "  border-radius: 4px;"
+            "  padding: 8px;"
+            "  font: 9pt 'Courier New';"
+            "}"
+        );
+        mainLayout->addWidget(cmdTextEdit);
+        nav2tCmdTextEdit_ = cmdTextEdit;
+
+        // Copy button
+        QPushButton *copyBtn = new QPushButton("Copy Command");
+        copyBtn->setStyleSheet(
+            "QPushButton {"
+            "  background: #555;"
+            "  color: white;"
+            "  border: none;"
+            "  border-radius: 4px;"
+            "  padding: 8px;"
+            "  font: bold 10pt 'SF Pro';"
+            "  min-height: 30px;"
+            "}"
+            "QPushButton:hover {"
+            "  background: #666;"
+            "}"
+            "QPushButton:pressed {"
+            "  background: #444;"
+            "}"
+        );
+        mainLayout->addWidget(copyBtn);
+        copyNav2tCmdBtn_ = copyBtn;
+        connect(copyBtn, &QPushButton::clicked, this, &MainWindow::onCopyNav2TCmdClicked);
+
+        mainLayout->addStretch();
+
+        ui->navi2_two->setLayout(mainLayout);
+
+        qDebug() << "Nav2_T tab UI created successfully";
+    }
+}
+
+void MainWindow::activateNav2TTab()
+{
+    qDebug() << "Nav2_T tab activated";
+}
+
+void MainWindow::deactivateNav2TTab()
+{
+    qDebug() << "Nav2_T tab deactivated";
+}
+
+void MainWindow::onCopyNav2TCmdClicked()
+{
+    if (nav2tCmdTextEdit_) {
+        QString cmd = nav2tCmdTextEdit_->toPlainText();
+        if (cmd.isEmpty()) {
+            qDebug() << "No command to copy";
+            return;
+        }
+        
+        QClipboard *clipboard = QGuiApplication::clipboard();
+        clipboard->setText(cmd);
+        qDebug() << "Command copied to clipboard";
+        
+        // Visual feedback
+        QString originalStyle = copyNav2tCmdBtn_->styleSheet();
+        copyNav2tCmdBtn_->setText("Copied!");
+        copyNav2tCmdBtn_->setStyleSheet(
+            "QPushButton {"
+            "  background: #03fc84;"
+            "  color: black;"
+            "  border: none;"
+            "  border-radius: 4px;"
+            "  padding: 8px;"
+            "  font: bold 10pt 'SF Pro';"
+            "  min-height: 30px;"
+            "}"
+        );
+        
+        QTimer::singleShot(1500, this, [this, originalStyle]() {
+            copyNav2tCmdBtn_->setText("Copy Command");
+            copyNav2tCmdBtn_->setStyleSheet(originalStyle);
+        });
     }
 }
 
@@ -2928,77 +2948,67 @@ void MainWindow::onNavigateThroughPosesClicked()
         return;
     }
 
-    qDebug() << "Sending NavigateThroughPoses goal with 4 poses";
+    // Helper lambda to convert degree to quaternion
+    auto degToQuat = [](double deg) -> std::tuple<double, double, double, double> {
+        double rad = deg * M_PI / 180.0;
+        double half = rad / 2.0;
+        return {0.0, 0.0, sin(half), cos(half)};  // x, y, z, w
+    };
 
-    // Build poses array
-    QJsonArray poses;
-    
-    for (int i = 0; i < 4; ++i)
-    {
-        double x = goalThroughPosesX_[i]->currentText().toDouble();
-        double y = goalThroughPosesY_[i]->currentText().toDouble();
-        double theta_deg = goalThroughPosesTheta_[i]->currentText().toDouble();
-        double theta_rad = theta_deg * M_PI / 180.0;
+    // Get values for all 4 poses
+    double x1 = nav2tPose1X_->currentText().toDouble();
+    double y1 = nav2tPose1Y_->currentText().toDouble();
+    double theta1 = nav2tPose1Theta_->currentText().toDouble();
+    auto [ox1, oy1, oz1, ow1] = degToQuat(theta1);
 
-        qDebug() << "  Pose" << (i+1) << ": x=" << x << ", y=" << y << ", theta=" << theta_deg << "deg";
+    double x2 = nav2tPose2X_->currentText().toDouble();
+    double y2 = nav2tPose2Y_->currentText().toDouble();
+    double theta2 = nav2tPose2Theta_->currentText().toDouble();
+    auto [ox2, oy2, oz2, ow2] = degToQuat(theta2);
 
-        // Position
-        QJsonObject position;
-        position["x"] = x;
-        position["y"] = y;
-        position["z"] = 0.0;
+    double x3 = nav2tPose3X_->currentText().toDouble();
+    double y3 = nav2tPose3Y_->currentText().toDouble();
+    double theta3 = nav2tPose3Theta_->currentText().toDouble();
+    auto [ox3, oy3, oz3, ow3] = degToQuat(theta3);
 
-        // Orientation (convert theta to quaternion)
-        QJsonObject orientation;
-        double half_theta = theta_rad / 2.0;
-        orientation["x"] = 0.0;
-        orientation["y"] = 0.0;
-        orientation["z"] = sin(half_theta);
-        orientation["w"] = cos(half_theta);
+    double x4 = nav2tPose4X_->currentText().toDouble();
+    double y4 = nav2tPose4Y_->currentText().toDouble();
+    double theta4 = nav2tPose4Theta_->currentText().toDouble();
+    auto [ox4, oy4, oz4, ow4] = degToQuat(theta4);
 
-        // Pose
-        QJsonObject pose;
-        pose["position"] = position;
-        pose["orientation"] = orientation;
+    // Build the ROS2 action command
+    QString cmd = QString(
+        "ros2 action send_goal /navigate_through_poses nav2_msgs/action/NavigateThroughPoses "
+        "\"{poses: ["
+        "{header: {frame_id: map}, pose: {position: {x: %1, y: %2, z: 0.0}, orientation: {x: %3, y: %4, z: %5, w: %6}}}, "
+        "{header: {frame_id: map}, pose: {position: {x: %7, y: %8, z: 0.0}, orientation: {x: %9, y: %10, z: %11, w: %12}}}, "
+        "{header: {frame_id: map}, pose: {position: {x: %13, y: %14, z: 0.0}, orientation: {x: %15, y: %16, z: %17, w: %18}}}, "
+        "{header: {frame_id: map}, pose: {position: {x: %19, y: %20, z: 0.0}, orientation: {x: %21, y: %22, z: %23, w: %24}}}"
+        "]}\""
+    ).arg(x1).arg(y1).arg(ox1).arg(oy1).arg(oz1).arg(ow1)
+     .arg(x2).arg(y2).arg(ox2).arg(oy2).arg(oz2).arg(ow2)
+     .arg(x3).arg(y3).arg(ox3).arg(oy3).arg(oz3).arg(ow3)
+     .arg(x4).arg(y4).arg(ox4).arg(oy4).arg(oz4).arg(ow4);
 
-        // PoseStamped
-        QJsonObject header;
-        header["frame_id"] = "map";
-        
-        QJsonObject poseStamped;
-        poseStamped["header"] = header;
-        poseStamped["pose"] = pose;
-
-        poses.append(poseStamped);
+    // Update text edit
+    if (nav2tCmdTextEdit_) {
+        nav2tCmdTextEdit_->setPlainText(cmd);
     }
 
-    // Build goal
-    QJsonObject goal;
-    goal["poses"] = poses;
-
-    // Send action goal
-    QString action_name = "/navigate_through_poses";
-    QString action_type = "nav2_msgs/action/NavigateThroughPoses";
-    QString goal_id = "nav_through_poses_" + QString::number(QDateTime::currentMSecsSinceEpoch());
-
-    QMetaObject::invokeMethod(
-        communication_,
-        "sendActionGoal",
-        Qt::QueuedConnection,
-        Q_ARG(const QString&, action_name),
-        Q_ARG(const QString&, goal_id),
-        Q_ARG(const QString&, action_type),
-        Q_ARG(const QJsonObject&, goal)
-    );
-
-    qDebug() << "NavigateThroughPoses goal sent with ID:" << goal_id;
+    qDebug() << "Sending NavigateThroughPoses goal with 4 poses";
+    
+    // Open gnome-terminal with SSH login
+    qDebug() << "Opening SSH terminal to: " << robotIp_;
+    QString sshCmd = QString("sshpass -p '%1' ssh mr_robot@%2").arg(password_, robotIp_);
+    QStringList args;
+    args << "--" << "bash" << "-c" << sshCmd;
+    QProcess::startDetached("gnome-terminal", args);
     
     // Show confirmation
     if (btStatusLabel_) {
-        btStatusLabel_->setText("NavigateThroughPoses goal sent with 4 waypoints");
+        btStatusLabel_->setText(QString("Navigate Through Poses sent (4 poses)"));
     }
 }
-
 
 void MainWindow::onReceivedTopicMessage(const QString &topic, const QJsonObject &msg)
 {
@@ -3345,9 +3355,6 @@ void MainWindow::onReceivedTopicMessage(const QString &topic, const QJsonObject 
     /* NAV2 1 TAB */
     else if( currentMode == Mode::nav2_1 ) {}
 
-    /* NAV2 2 TAB */
-    else if( currentMode == Mode::nav2_2 ) {}
-
     /* NAV2 3 TAB */
     else if( currentMode == Mode::nav2_3 )
     {
@@ -3437,23 +3444,20 @@ void MainWindow::onReceivedTopicMessage(const QString &topic, const QJsonObject 
 
 void MainWindow::onReceivedActionFeedback(const QString &action_name, const QJsonObject &feedback)
 {
-    // Determine which tab is handling this feedback
-    bool isNav2_1 = (currentMode == Mode::nav2_1 && action_name == "/navigate_to_pose");
-    bool isNav2_2 = (currentMode == Mode::nav2_2 && action_name == "/navigate_through_poses");
-    
-    if (!isNav2_1 && !isNav2_2) return;
+    // Only handle nav2_1 tab feedback
+    if (currentMode != Mode::nav2_1 || action_name != "/navigate_to_pose") return;
     
     qDebug() << "Action feedback received for:" << action_name;
     qDebug() << "Feedback data:" << feedback;
 
-    // Select the appropriate UI components based on current mode
-    QTimer* feedbackTimer = isNav2_1 ? nav2_1FeedbackTimer_ : nav2_2FeedbackTimer_;
-    QLabel* nullLabel = isNav2_1 ? nav2_1NullLabel_ : nav2_2NullLabel_;
-    QWidget* feedbackWidget = isNav2_1 ? nav2_1FeedbackWidget_ : nav2_2FeedbackWidget_;
-    QVBoxLayout* feedbackLayout = isNav2_1 ? nav2_1FeedbackLayout_ : nav2_2FeedbackLayout_;
-    QMap<QString, QLabel*>& feedbackLabels = isNav2_1 ? nav2_1FeedbackLabels_ : nav2_2FeedbackLabels_;
-    QStringList& behaviorTreeStates = isNav2_1 ? nav2_1BehaviorTreeStates_ : nav2_2BehaviorTreeStates_;
-    int maxStatesSize = isNav2_1 ? nav2_1BehaviorTreeStatesMaxSize_ : nav2_2BehaviorTreeStatesMaxSize_;
+    // Use nav2_1 UI components
+    QTimer* feedbackTimer = nav2_1FeedbackTimer_;
+    QLabel* nullLabel = nav2_1NullLabel_;
+    QWidget* feedbackWidget = nav2_1FeedbackWidget_;
+    QVBoxLayout* feedbackLayout = nav2_1FeedbackLayout_;
+    QMap<QString, QLabel*>& feedbackLabels = nav2_1FeedbackLabels_;
+    QStringList& behaviorTreeStates = nav2_1BehaviorTreeStates_;
+    int maxStatesSize = nav2_1BehaviorTreeStatesMaxSize_;
 
     // Reset feedback timeout timer
     if (feedbackTimer) {

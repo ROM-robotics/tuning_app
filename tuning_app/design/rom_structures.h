@@ -178,7 +178,7 @@ enum class Mode {
     ekf,
     carto,
     nav2_1,
-    nav2_2,
+    nav2_t,
     nav2_3,
     goal,
     bt,
@@ -200,8 +200,8 @@ inline std::string ModeToString(Mode mode)
             return "carto";
         case Mode::nav2_1:
             return "nav2_1";
-        case Mode::nav2_2:
-            return "nav2_2";
+        case Mode::nav2_t:
+            return "nav2_t";
         case Mode::nav2_3:
             return "nav2_3";
         case Mode::goal:

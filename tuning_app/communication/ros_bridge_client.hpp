@@ -53,9 +53,6 @@ public slots:
     void subscribeActionFeedback(const QString &action_name, const QString &action_type);
     void unsubscribeActionFeedback(const QString &action_name);
     
-    // --------------------------------- ACTION GOAL
-    void sendActionGoal(const QString &action_name, const QString &goal_id, const QString &action_type, const QJsonObject &goal);
-
     // ⭐ rosapi related
     void getTopicsList(const QString &id);
     // ⭐ Helper function for rosapi service call
