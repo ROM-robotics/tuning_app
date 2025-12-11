@@ -2493,7 +2493,7 @@ void MainWindow::initGoalTab()
             "  selection-color: black;"
             "}"
         );
-        for (int i = -179; i <= 179; i += 15) {
+        for (int i = -179; i <= 179; ++i) {
             thetaCombo->addItem(QString::number(i));
         }
         thetaCombo->setCurrentText("0");
@@ -2806,7 +2806,7 @@ void MainWindow::initNav2TTab()
                 "  selection-color: black;"
                 "}"
             );
-            for (int i = -179; i <= 179; i += 15) {
+            for (int i = -179; i <= 179; ++i) {
                 thetaCmb->addItem(QString::number(i));
             }
             thetaCmb->setCurrentText("0");
