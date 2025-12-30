@@ -2227,7 +2227,8 @@ void MainWindow::initLogTab()
             "rom_obstacles_provider",
             "rom_rosbridge_websocket",
             "rom_map_bfp",
-            "rom_which_tasks_server"
+            "rom_which_tasks_server",
+            "rom_log_cleaner"
         };
 
         // Header row
