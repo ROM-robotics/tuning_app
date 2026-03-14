@@ -2228,7 +2228,9 @@ void MainWindow::initLogTab()
             "rom_rosbridge_websocket",
             "rom_map_bfp",
             "rom_which_tasks_server",
-            "rom_log_cleaner"
+            "rom_log_cleaner",
+            "rom_bluetooth_server",
+            "rom_socket_server"
         };
 
         // Header row
